@@ -65,6 +65,8 @@ Las pruebas incluyen una comprobacion conservadora de recorrido: cada nivel debe
 
 El repositorio incluye el paquete listo para usar en otra computadora:
 
+**Descarga directa:** [Elemental-Escape-Windows.zip](https://github.com/felipetsalinas22/ElementalEscape/raw/main/dist/Elemental-Escape-Windows.zip)
+
 ```text
 dist\Elemental-Escape-Windows.zip
 ```

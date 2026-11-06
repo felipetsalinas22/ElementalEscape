@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Reporte de Etapa 1.2.0 - Elemental Escape</title>
+<style>
+  @page { margin: 18mm; }
+  body { font-family: Arial, Helvetica, sans-serif; margin: 28px; line-height: 1.55; color: #222; }
+  h1 { color: #17233d; border-bottom: 3px solid #d89b2b; padding-bottom: 8px; }
+  h2 { color: #20365e; margin-top: 28px; border-left: 5px solid #4d78b8; padding-left: 10px; }
+  h3 { color: #31496f; }
+  code { background: #eef2f7; padding: 2px 5px; border-radius: 3px; font-family: Consolas, monospace; }
+  pre { background: #f4f6f9; border: 1px solid #d8dee8; padding: 12px; border-radius: 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 10.5pt; }
+  th, td { border: 1px solid #cfd6e1; padding: 7px 9px; vertical-align: top; }
+  th { background: #20365e; color: white; }
+  tr:nth-child(even) td { background: #f7f9fc; }
+  .ok { color: #1d7a3a; font-weight: bold; }
+  .warn { color: #9a6200; font-weight: bold; }
+  .note { background: #fff8e6; border-left: 4px solid #d89b2b; padding: 10px 14px; margin: 14px 0; }
+  .small { color: #5b6472; font-size: 9.5pt; }
+</style>
+</head>
+<body>
+
+<h1>Reporte de Etapa - Elemental Escape 1.2.0</h1>
+<p><strong>Fecha:</strong> 6 de noviembre de 2026<br>
+<strong>Version:</strong> 1.2.0<br>
+<strong>Alcance:</strong> escenarios tematicos, personajes humanoides, menu y HUD renovados, revision de niveles y distribucion portable para Windows.</p>
+
+<h2>1. Resumen de la etapa</h2>
+<p>Esta etapa se centro en la presentacion visual y en dejar una version distribuible sin depender de un Java instalado. No se reemplazo la logica del juego: se conservaron los diez niveles, la simulacion local, el modo online, la puntuacion, el ranking, el editor y la persistencia JSON.</p>
+<ul>
+  <li>Fondos multicapa con parallax, decoracion, iluminacion y particulas para los escenarios de la campana.</li>
+  <li>Personajes humanoides por piezas con animaciones de reposo, caminata, salto, caida, interaccion, victoria y derrota.</li>
+  <li>Menu principal, botones, HUD, ranking, ajustes, resultados y pantalla final con una direccion artistica comun.</li>
+  <li>Revision de conectividad de los diez niveles y nuevas gemas secretas en rutas altas opcionales.</li>
+  <li>Distribucion Windows autocontenida con <code>jpackage</code>, runtime incluido, lanzador <code>.exe</code> y ZIP portable.</li>
+</ul>
+
+<h2>2. Escenarios y personajes</h2>
+<h3>Fondos por tema</h3>
+<p>Se dibujan por capas y con parallax simulado, sin intervenir en las colisiones. Cada tema tiene paleta, siluetas, decoracion y efectos propios:</p>
+<table>
+  <thead><tr><th>Tema</th><th>Tratamiento visual</th></tr></thead>
+  <tbody>
+    <tr><td>TEMPLO</td><td>Columnas, arcos, antorchas y polvo dorado.</td></tr>
+    <tr><td>VOLCAN</td><td>Lava animada, rocas, ascuas y resplandor naranja.</td></tr>
+    <tr><td>CAVERNA</td><td>Cristales, estalactitas, humedad y luz fria.</td></tr>
+    <tr><td>BOSQUE</td><td>Arboles, hojas, rayos de luz y esporas.</td></tr>
+    <tr><td>LABORATORIO</td><td>Maquinaria, tuberias, paneles y energia azul.</td></tr>
+    <tr><td>HIELO</td><td>Plataformas heladas, nieve y reflejos celestes.</td></tr>
+    <tr><td>CIELO</td><td>Nubes en capas, viento y plataformas suspendidas.</td></tr>
+    <tr><td>COSMOS / FINAL</td><td>Estrellas, nebulosas y energia elemental concentrada.</td></tr>
+  </tbody>
+</table>
+
+<h3>Personajes</h3>
+<ul>
+  <li>Cabeza, torso, brazos, piernas, nucleo y detalles propios de Fuego y Agua.</li>
+  <li>Animacion de reposo con respiracion, caminata con zancada alterna, salto, caida, interaccion, celebracion y derrota.</li>
+  <li>El cuerpo de colision no cambia al animar las piezas visuales. Las fisicas y los saltos siguen usando las mismas dimensiones.</li>
+  <li>Los avatares del menu y de los resultados usan el mismo sistema que los personajes en juego.</li>
+</ul>
+
+<h2>3. Menu, botones y legibilidad</h2>
+<ul>
+  <li>Titulo protagonista, avatares de Fuego y Agua en los costados, fondo nocturno y panel de progreso.</li>
+  <li>Botones en dos columnas con hover, brillo, acento lateral, teclas rapidas y texto ajustado para no salirse del area.</li>
+  <li>Los avatares se elevaron por encima de los botones para que pies y sombras no queden recortados.</li>
+  <li>El ranking muestra cinco logros destacados sin invadir la zona de records.</li>
+  <li>La paleta del editor distribuye sus 16 herramientas dentro del panel y por encima de la barra de estado.</li>
+  <li>El porcentaje de volumen ya no se superpone con los botones <code>-</code> y <code>+</code>.</li>
+  <li>Las capturas automaticas se guardan orientadas correctamente y fueron revisadas con OCR de Windows para comprobar que los textos principales aparecen completos y separados.</li>
+</ul>
+
+<h2>4. Niveles y complejidad</h2>
+<p>Se mantuvieron los diez niveles y se agrego una validacion automatica de recorrido. El validador construye las superficies pisables, ignora puertas cerradas y peligros, y comprueba que los origenes, salidas y mecanismos esten sobre superficies conectadas por saltos posibles.</p>
+<table>
+  <thead><tr><th>Nivel</th><th>Mecanica principal</th></tr></thead>
+  <tbody>
+    <tr><td>1. El despertar elemental</td><td>Tutorial de salto, palanca, puerta y gemas.</td></tr>
+    <tr><td>2. Caminos separados</td><td>Rutas distintas para Fuego y Agua, repisas altas y gemas secretas.</td></tr>
+    <tr><td>3. El templo de los interruptores</td><td>Dos placas elementales, puerta temporizada y puente opcional.</td></tr>
+    <tr><td>4. Elementos opuestos</td><td>Lava y agua obligan a caminos diferentes; placas simultaneas.</td></tr>
+    <tr><td>5. La camara de las plataformas moviles</td><td>Plataformas moviles, palanca alta y gema secreta de recompensa.</td></tr>
+    <tr><td>6. El orden correcto</td><td>Secuencia de palancas y puerta TODAS.</td></tr>
+    <tr><td>7. El laboratorio elemental</td><td>Cajas, placas, puente de energia y puerta final.</td></tr>
+    <tr><td>8. El laberinto humeante</td><td>Rutas separadas, puente controlado y palanca de Agua.</td></tr>
+    <tr><td>9. La prueba de los elementos</td><td>Caja pesada, placa que necesita ambos jugadores y salida escoltada.</td></tr>
+    <tr><td>10. El desafio definitivo</td><td>Cuatro salas con puzzles encadenados y secretos opcionales.</td></tr>
+  </tbody>
+</table>
+<p>Las nuevas gemas secretas de los niveles 2 y 5 premian explorar las rutas altas sin bloquear la ruta principal.</p>
+
+<h2>5. Distribucion Windows</h2>
+<p>Se agrego la tarea <code>:lwjgl3:distWindows</code> y su alias <code>:lwjgl3:dist</code>. Ambas compilan el JAR y ejecutan el script <code>scripts/crear-distribucion.ps1</code>, que genera una aplicacion con runtime incluido mediante <code>jpackage --type app-image</code>.</p>
+<pre>.\gradlew.bat :lwjgl3:distWindows --console=plain</pre>
+<table>
+  <thead><tr><th>Salida</th><th>Contenido</th></tr></thead>
+  <tbody>
+    <tr><td><code>dist\Elemental Escape\Elemental Escape.exe</code></td><td>Lanzador Windows con runtime Java 21 incluido.</td></tr>
+    <tr><td><code>dist\Elemental Escape\runtime\</code></td><td>Runtime recortado; incluye <code>jvm.dll</code> y los modulos necesarios.</td></tr>
+    <tr><td><code>dist\Elemental Escape\app\Elemental Escape-1.2.0.jar</code></td><td>Un unico JAR del juego; no se empaquetan versiones antiguas.</td></tr>
+    <tr><td><code>dist\Elemental-Escape-Windows.zip</code></td><td>Paquete portable listo para copiar.</td></tr>
+    <tr><td><code>dist\LEEME-DISTRIBUCION.txt</code></td><td>Instrucciones para el usuario final.</td></tr>
+  </tbody>
+</table>
+<p>Los datos del jugador siguen guardandose en <code>%USERPROFILE%\.elemental-escape\</code>: <code>progreso.json</code>, <code>ajustes.json</code> y la carpeta <code>niveles\</code>. Nada de eso se guarda dentro de la carpeta reemplazable de la distribucion.</p>
+
+<h2>6. Correcciones de esta etapa</h2>
+<ol>
+  <li>Botones con texto largo podian quedar recortados; se agrego ajuste automatico de escala.</li>
+  <li>El ultimo boton de la paleta del editor quedaba parcialmente tapado por la barra de estado.</li>
+  <li>El separador de logros del ranking podia cruzarse con el texto.</li>
+  <li>El porcentaje de volumen se solapaba con los controles de ajuste.</li>
+  <li>Las capturas del smoke test se guardaban invertidas verticalmente; ahora se corrigen antes de escribir el PNG.</li>
+  <li>La distribucion podia incluir JAR antiguos en la carpeta <code>libs</code>; ahora se prepara una carpeta temporal con un unico JAR.</li>
+</ol>
+
+<h2>7. Verificacion ejecutada</h2>
+<table>
+  <thead><tr><th>Comprobacion</th><th>Resultado</th></tr></thead>
+  <tbody>
+    <tr><td>Compilacion <code>:core:compileJava</code></td><td class="ok">OK</td></tr>
+    <tr><td>Pruebas headless <code>:core:pruebas</code></td><td class="ok">107 pruebas, 0 fallos</td></tr>
+    <tr><td>Conectividad de los 10 niveles</td><td class="ok">10/10 con recorrido viable</td></tr>
+    <tr><td>Fisica, reinicio, mecanismos, puntuacion y persistencia</td><td class="ok">OK</td></tr>
+    <tr><td>Red en localhost: conexion, instantanea, entrada, comandos, desconexion y reconexion</td><td class="ok">OK</td></tr>
+    <tr><td>Smoke test OpenGL <code>:lwjgl3:pruebasUI</code></td><td class="ok">Menu, niveles, online, ranking, ajustes, editor y juego local abiertos y cerrados</td></tr>
+    <tr><td>Capturas PNG de las pantallas</td><td class="ok">8 capturas orientadas correctamente en <code>lwjgl3/build/capturas</code></td></tr>
+    <tr><td>Texto visible en capturas</td><td class="ok">OCR detecta titulos, botones, HUD y textos de ayuda sin recortes principales</td></tr>
+    <tr><td>Generacion de distribucion</td><td class="ok">Runtime incluido, un unico JAR, EXE y ZIP creados</td></tr>
+    <tr><td>Arranque de <code>Elemental Escape.exe</code></td><td class="ok">Proceso iniciado y cerrado correctamente; no quedaron procesos huerfanos</td></tr>
+  </tbody>
+</table>
+
+<h2>8. Limitaciones y pendientes</h2>
+<ul>
+  <li>El modo online se probo automaticamente en localhost. Falta una partida manual entre dos computadoras reales; para Internet se requiere abrir el puerto TCP <code>54555</code> o usar una VPN.</li>
+  <li>La validacion de conectividad es conservadora: detecta geometria aislada, pero no sustituye una partida completa de cada puzzle.</li>
+  <li>La revision visual se apoyo en capturas y OCR, no en una sesion de juego manual prolongada.</li>
+  <li>La distribucion generada es una carpeta portable y un ZIP; no se genero un instalador MSI/EXE con asistente.</li>
+</ul>
+
+<h2>9. Como reproducir</h2>
+<pre># Compilar y probar
+.\gradlew.bat :core:pruebas --console=plain
+.\gradlew.bat :lwjgl3:pruebasUI --console=plain
+
+# Jugar desde el proyecto
+.\gradlew.bat :lwjgl3:run --console=plain
+
+# Generar la distribucion Windows
+.\gradlew.bat :lwjgl3:distWindows --console=plain
+
+# Ejecutar la distribucion
+dist\Elemental Escape\Elemental Escape.exe</pre>
+
+<h2>10. Archivos principales modificados</h2>
+<table>
+  <thead><tr><th>Archivo</th><th>Cambio</th></tr></thead>
+  <tbody>
+    <tr><td><code>DibujanteJuego.java</code></td><td>Fondos multicapa, humanoides animados, HUD, resultados y avatares.</td></tr>
+    <tr><td><code>MenuPrincipal.java</code></td><td>Titulo, avatares elevados, botones y panel de progreso.</td></tr>
+    <tr><td><code>Interfaz.java</code></td><td>Hover, acentos laterales y ajuste de texto.</td></tr>
+    <tr><td><code>PantallaJuego.java</code></td><td>Resultados y derrota con avatares y nueva jerarquia visual.</td></tr>
+    <tr><td><code>PantallaRanking.java</code></td><td>Separacion correcta entre logros y records.</td></tr>
+    <tr><td><code>PantallaAjustes.java</code></td><td>Porcentaje de volumen sin solapamiento.</td></tr>
+    <tr><td><code>PantallaEditor.java</code></td><td>Paleta de 16 herramientas dentro del panel.</td></tr>
+    <tr><td><code>NivelesIntegrados.java</code></td><td>Gemas secretas en rutas altas de los niveles 2 y 5.</td></tr>
+    <tr><td><code>ValidadorNivel.java</code></td><td>Validacion de conectividad por superficies y saltos.</td></tr>
+    <tr><td><code>Pruebas.java</code></td><td>Comprobacion de recorrido viable en los 10 niveles.</td></tr>
+    <tr><td><code>SmokePantallas.java</code></td><td>Capturas corregidas y guardadas en PNG.</td></tr>
+    <tr><td><code>lwjgl3/build.gradle</code></td><td>Tareas <code>distWindows</code> y <code>dist</code>.</td></tr>
+    <tr><td><code>scripts/crear-distribucion.ps1</code></td><td>App-image, runtime, LEEME y ZIP portable.</td></tr>
+  </tbody>
+</table>
+
+<p class="small">Reporte generado el 6 de noviembre de 2026 para Elemental Escape 1.2.0.</p>
+</body>
+</html>

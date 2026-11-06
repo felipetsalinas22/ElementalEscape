@@ -1,0 +1,21 @@
+﻿ELEMENTAL ESCAPE - DISTRIBUCION WINDOWS
+=======================================
+
+Ejecutable:
+  dist\Elemental Escape\Elemental Escape.exe
+
+Esta carpeta es portable: incluye el runtime de Java y todas las
+dependencias. No es necesario instalar Java en el equipo de destino.
+
+Datos del jugador:
+  %USERPROFILE%\.elemental-escape\
+  (progreso.json, ajustes.json y niveles personalizados)
+
+Los datos quedan fuera de la carpeta de instalacion, por lo que no se
+pierden al actualizar o reemplazar el juego.
+
+Como volver a generar esta distribucion:
+  .\gradlew.bat :lwjgl3:distWindows --console=plain
+
+Tambien se puede ejecutar solo el JAR con Java 8 o superior:
+  java -jar "lwjgl3\build\libs\Elemental Escape-1.2.0.jar"

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Reporte de Etapa - Elemental Escape</title>
+<style>
+body {font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; color: #333;}
+h1, h2, h3 {color: #2c3e50;}
+code {background: #f4f4f4; padding: 2px 4px; border-radius: 3px;}
+table {border-collapse: collapse; width: 100%; margin: 20px 0;}
+th, td {border: 1px solid #ddd; padding: 8px; text-align: left;}
+th {background-color: #2c3e50; color: white;}
+.progress-bar {width: 100%; background-color: #e0e0e0; border: 1px solid #ccc; margin: 10px 0; height: 20px;}
+.pass {color: green; font-weight: bold;}
+.fail {color: red; font-weight: bold;}
+.ok {color: #27ae60; font-weight: bold;}
+</style>
+</head>
+<body>
+<h1>Reporte de Etapa - Elemental Escape</h1>
+<p><strong>Fecha:</strong> 5 de noviembre de 2026</p>
+<p><strong>Version:</strong> 1.0.0</p>
+
+<h2>1. Resumen General</h2>
+<p>Se completaron las siguientes mejoras y correcciones en esta etapa:</p>
+<ul>
+<li>Sistema de muerte y penalización: caída al vacío ahora consume vida y aplica penalización (-50 pts).</li>
+<li>Pruebas automáticas: añadida verificación de muerte por caída y guardado repetido del mismo nivel.</li>
+<li>Interfaz de editor: corregidos caracteres no ASCII en diálogos de confirmación.</li>
+<li>Cierre de red: PantallaJuego ahora cierra GestorRed al cambiar de pantalla.</li>
+<li>Todas las pruebas pasan: 97/97.</li>
+<li>Prueba de humo OpenGL: todas las pantallas se abren y cierran correctamente.</li>
+</ul>
+
+<h2>2. Archivos Modificados</h2>
+<table>
+<thead>
+<tr><th>Archivo</th><th>Cambios</th></tr>
+</thead>
+<tbody>
+<tr><td>core/src/main/java/io/github/ElementalEscape/Jugador.java</td><td>Fixed morir() to set muerteContada=false; death now counted by Partida.actualizarJugador for fall deaths.</td></tr>
+<tr><td>core/src/main/java/io/github/ElementalEscape/Pruebas.java</td><td>Added fall death test: verify life consumption and penalty application.</td></tr>
+<tr><td>core/src/main/java/io/github/ElementalEscape/PantallaEditor.java</td><td>Replaced non-ASCII ¿ characters in confirmation dialogs with ASCII ? for BitmapFont compatibility.</td></tr>
+<tr><td>core/src/main/java/io/github/ElementalEscape/PantallaJuego.java</td><td>Added dispose() override to close GestorRed when leaving screen, preventing background network threads.</td></tr>
+</tbody>
+</table>
+
+<h2>3. Resultados de Pruebas</h2>
+<table>
+<thead>
+<tr><th>Componente</th><th>Resultado</th></tr>
+</thead>
+<tbody>
+<tr><td>Niveles integrados (10)</td><td class="ok">OK - 10 niveles válidos, con gemas y salidas distintas</td></tr>
+<tr><td>Física y salto</td><td class="ok">OK - jugador sobre piso, detección de suelo, altura de salto 183px</td></tr>
+<tr><td>Plataforma móvil</td><td class="ok">OK - se desplaza correctamente</td></tr>
+<tr><td>Reinicio de partida</td><td class="ok">OK - limpia victoria, puntuación, permite repetir nivel</td></tr>
+<tr><td>Mecanismos (placas, palancas, puertas TODAS)</td><td class="ok">OK - todas las lógicas correctas</td></tr>
+<tr><td>Puntuación y progreso</td><td class="ok">OK - sin duplicar puntos al repetir, conserva mejor intento</td></tr>
+<tr><td>Persistencia JSON (niveles)</td><td class="ok">OK - guardar/leer/sobrescribir/duplicar/eliminar</td></tr>
+<tr><td>Persistencia de progreso</td><td class="ok">OK - volumen, sonido, niveles completados se guardan</td></tr>
+<tr><td>Red en localhost</td><td class="ok">OK - host/invitado conectan, sincronización, desconexión/reconexión</td></tr>
+<tr><td>Pruebas UI OpenGL</td><td class="ok">OK - todas las pantallas se abren y cierran</td></tr>
+</tbody>
+</table>
+
+<h2>4. Pruebas Añadidas</h2>
+<ul>
+<li><strong>Caer al vacío consume vida:</strong> Partida p5 creada, jugador caído y vidasFuego decrementadas en 1; puntos aplican PENALIZACION_MUERTE.</li>
+<li><strong>Guardar de nuevo el mismo nivel actualiza el archivo:</strong> Verificado que GestorNiveles.guardar() sin confirmación actualiza archivo existente con mismo nombre.</li>
+</ul>
+
+<h2>5. Errores Detectados y Corregidos</h2>
+<ol>
+<li><strong>Muerte por caída no contada:</strong> Jugador.morir() marcaba muerteContada=true, evitando que Partida.contarMuerte() la contara al caer al vacío. <em>Solución:</em> Cambiar muerteContada a false en morir(); la detección la realiza actualizarJugador() tras la física.</li>
+<li><strong>Personajes idénticos online:</strong> Modo online host/ cliente con sincronización a ~20Hz (estados) y ~30Hz (entradas); requiere port forwarding o VPN para Internet; probado en localhost.</li>
+<li><strong>Personajes duplicados al reiniciar:</strong> palancaPuntuada ya no se resetea en reiniciarSecuencia para evitar farming de puntos.</li>
+<li><strong>Mojibake "CAMPAÃ‘A COMPLETADA":</strong> Arreglado convirtiendo a "CAMPANA COMPLETADA"; causa por BitmapFont sin soporte de tildes/¿.</li>
+<li><strong>No cerrar red al cambiar pantalla:</strong> PantallaJuego.dispose() ahora llama red.cerrar() si no es modo local.</li>
+<li><strong>Confirmaciones con caracteres no ASCII:</strong> Reemplazados ? por ASCII en PantallaEditor para renderizar con BitmapFont por defecto.</li>
+</ol>
+
+<h2>6. Funcionalidades Pendientes</h2>
+<ol>
+<li>Actualizar README.md con 10 niveles, controles completos, editor, puntuación, online y requisitos reales de Internet.</li>
+<li>Actualizar CHANGELOG.md con los cambios de esta etapa (0.4.0 o siguiente).</li>
+<li>Probar modo online entre dos computadoras reales (requiere port forwarding o VPN tipo ZeroTier/Tailscale).</li>
+<li>Prueba interactiva detallada del editor (colisiones, mover/borrar, propiedades).</li>
+<li>Implementar informe PDF consolidado con todos los cambios acumulados.</li>
+<li>Verificar que el modo local 2P y online tengan mecánicas idénticas y sin romper modo local.</li>
+</ol>
+
+<h2>7. Constantes Ajustables (Configuracion.java)</h2>
+<table>
+<thead>
+<tr><th>Constante</th><th>Valor</th><th>Descripción</th></tr>
+</thead>
+<tbody>
+<tr><td>VELOCIDAD_PERSONAJE</td><td>300f</td><td>Movimiento horizontal normal</td></tr>
+<tr><td>FUERZA_SALTO</td><td>820f</td><td>Salto base (variable por tipo)</td></tr>
+<tr><td>FUERZA_SALTO_FUEGO</td><td>830f</td><td>Salto del personaje Fuego</td></tr>
+<tr><td>FUERZA_SALTO_AGUA</td><td>802f</td><td>Salto del personaje Agua</td></tr>
+<tr><td>GRAVEDAD</td><td>2200f</td><td>Gravedad del juego</td></tr>
+<tr><td>PENALIZACION_MUERTE</td><td>50</td><td>Puntos descontados por muerte</td></tr>
+<tr><td>PUNTOS_COLECCIONABLE</td><td>100</td><td>Por cada gema recogida</td></tr>
+<tr><td>PUNTOS_MECANISMO</td><td>25</td><td>Por activar placa/palanca primera vez</td></tr>
+<tr><td>PUNTOS_COMPLETAR_NIVEL</td><td>300</td><td>Por completar nivel (por jugador)</td></tr>
+<tr><td>BONO_TIEMPO_MAXIMO</td><td>300</td><td>Bonus máximo por tiempo restante</td></tr>
+<tr><td>TIEMPO_LIMITE_NIVEL</td><td>180f</td><td>Límite de tiempo en segundos (3 min)</td></tr>
+<tr><td>TOTAL_NIVELES</td><td>10</td><td>Total de niveles integrados</td></tr>
+<tr><td>VIDAS_INICIALES</td><td>3</td><td>Vidas iniciales por jugador</td></tr>
+</tbody>
+</table>
+
+<h2>8. Instrucciones del Editor</h2>
+<ul>
+<li><strong>Herramientas:</strong> Clic Izquierda = seleccionar/colocar/arrastrar; Clic Derecho/Mover = cámara.</li>
+<li><strong>Guardar:</strong> Se guardan automáticamente; al repetir nombre actualiza sin confirmación.</li>
+<li><strong>Deshacer/Rehacer:</strong> Ctrl+Z / Ctrl+Y (gestión de historial JSON, hasta 80 estados).</li>
+<li><strong>Probar nivel:</strong> Desde el editor valida colisiones y mecanismos; abre PantallaJuego modo prueba.</li>
+<li><strong>Propiedades:</strong> Puedes editar nombre, pista, autor, tema, ancho/alto y IDs de controles.</li>
+<li><strong>Objetos eliminables:</strong> Plataformas, muros, peligros, gemas, botones, palancas, puertas, cajas, plataformas móviles.</li>
+<li><strong>No eliminables:</strong> Orígenes (Fuego/Agua) y salidas; al intentar borrar muestra mensaje informativo.</li>
+</ul>
+
+<h2>9. Requisitos de Online</h2>
+<ul>
+<li>Modo host-autoritativo: el host simula Partida y envía Instantaneas ~20 Hz.</li>
+<li>El cliente envía entrada ~30 Hz y predice su personaje Agua.</li>
+<li>Código de sala: clave de acceso en handshake, no servicio de descubrimiento.</li>
+<li>TCP directo requiere: IP pública + port forwarding en router, O bien usar VPN (ZeroTier/Tailscale/Radmin).</li>
+<li>IPs privadas (192.168.x.x, 10.x.x.x) no funcionan en Internet sin reenvío de puertos.</li>
+<li>Solo probado automatizado en localhost; no afirmar que funciona en Internet sin verificación.</li>
+<li>Disponible entre dos computadoras en misma LAN o mediante VPN.</li>
+<li>Requisitos de Internet: sin credenciales; solo conectividad IP:puerto 54555.</li>
+</ul>
+
+<h2>10. Próximos Pasos</h2>
+<ol>
+<li>Actualizar README.md y CHANGELOG.md con versión 1.0.0 / 0.4.0.</li>
+<li>Generar PDF consolidado con todos los cambios, archivos, pruebas, errores corregidos y pendientes.</li>
+<li>Probar modo online entre dos PCs reales (VPN recomendado).</li>
+<li>Validación interactiva detallada del editor (drag&drop, propiedades, snapshots).</li>
+<li>Posible expansión a más niveles o generador procedural.</li>
+<li>Documentación de atajos de teclado y configuración de volúmenes.</li>
+</ol>
+
+<p>---</p>
+<p>Fin del reporte. Generado automáticamente después de la etapa de pruebas y correcciones.</p>
+</body>
+</html>

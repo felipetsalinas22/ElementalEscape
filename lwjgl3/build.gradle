@@ -176,9 +176,21 @@ construo {
   }
 }
 
-// Equivalent to the jar task; here for compatibility with gdx-setup.
-tasks.register('dist') {
+// Genera una aplicacion Windows autocontenida (runtime incluido) en dist/.
+tasks.register('distWindows', Exec) {
+  group = 'distribution'
+  description = 'Crea dist/Elemental Escape con runtime Java incluido y un ZIP portable.'
   dependsOn 'jar'
+  workingDir rootProject.projectDir
+  commandLine 'powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass',
+      '-File', rootProject.file('scripts/crear-distribucion.ps1').absolutePath, '-SkipBuild'
+}
+
+// La tarea historica dist ahora deja una distribucion jugable, no solo el JAR.
+tasks.register('dist') {
+  group = 'distribution'
+  description = 'Compila el JAR y genera la distribucion Windows portable en dist/.'
+  dependsOn 'distWindows'
 }
 
 distributions {
@@ -208,6 +220,17 @@ startScripts.classpath = project.tasks.jar.outputs.files
 // a good thing for end users. They won't need to ever set the debug-specific environment variable.
 tasks.withType(JavaExec.class).configureEach {
   environment("__GL_THREADED_OPTIMIZATIONS", 0)
+}
+
+// Prueba de humo con OpenGL real: abre y cierra todas las pantallas.
+tasks.register('pruebasUI', JavaExec) {
+  group = 'verification'
+  description = 'Abre menu, niveles, online, ranking, ajustes, editor y juego local.'
+  dependsOn classes
+  mainClass = 'io.github.ElementalEscape.lwjgl3.SmokePantallas'
+  classpath = sourceSets.main.runtimeClasspath
+  workingDir = rootProject.file('assets').path
+  jvmArgs += '--enable-native-access=ALL-UNNAMED'
 }
 
 if(enableGraalNative == 'true') {

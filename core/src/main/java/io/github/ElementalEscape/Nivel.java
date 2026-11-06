@@ -1,119 +1,240 @@
 package io.github.ElementalEscape;
 
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector2;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
-/** Define plataformas, peligros, boton, puerta, salidas, gemas y origenes. */
+/**
+ * Datos de un nivel. No guarda estado de la partida: eso lo hace Partida.
+ * Asi el mismo nivel se puede jugar, editar, guardar en JSON y sincronizar por red
+ * sin que queden "gemas tomadas" o "puertas abiertas" pegadas en los datos.
+ */
 public class Nivel {
-    public static final float MUNDO_ANCHO = 960f;
-    public static final float MUNDO_ALTO = 540f;
+    public static final int FORMATO_ACTUAL = 1;
 
+    // ---------- Datos generales ----------
+    public int formato = FORMATO_ACTUAL;
+    public String nombre = "Nuevo nivel";
+    public float ancho = Configuracion.ANCHO_MUNDO;
+    public float alto = Configuracion.ALTO_MUNDO;
+    public String tema = "TEMPLO";
+    public String pista = "Lleguen los dos a sus portales.";
+    public String autor = "Elemental Escape";
+
+    public float origenFuegoX = 80f;
+    public float origenFuegoY = 30f;
+    public float origenAguaX = 130f;
+    public float origenAguaY = 30f;
+    public Rectangle salidaFuego = new Rectangle(820f, 30f, 60f, 80f);
+    public Rectangle salidaAgua = new Rectangle(890f, 30f, 60f, 80f);
+
+    // ---------- Objetos ----------
+    public Plataforma[] plataformas = new Plataforma[0];
+    public Peligro[] peligros = new Peligro[0];
+    public Gema[] gemas = new Gema[0];
+    public Boton[] botones = new Boton[0];
+    public Palanca[] palancas = new Palanca[0];
+    public Puerta[] puertas = new Puerta[0];
+    public PlataformaMovil[] moviles = new PlataformaMovil[0];
+    public Caja[] cajas = new Caja[0];
+
+    public Nivel() { }
+
+    // =========================================================
+    //                    CLASES DE OBJETOS
+    // =========================================================
+
+    /** Plataforma o pared solida. El estilo solo cambia el dibujo. */
+    public static class Plataforma {
+        public Rectangle rect = new Rectangle();
+        public String estilo = "PIEDRA";
+
+        public Plataforma() { }
+
+        public Plataforma(float x, float y, float ancho, float alto, String estilo) {
+            rect.set(x, y, ancho, alto);
+            this.estilo = estilo;
+        }
+    }
+
+    /** Zona peligrosa. lava=true mata al agua; lava=false mata al fuego. */
     public static class Peligro {
-        public Rectangle rect;
-        public Jugador.Tipo tipo; // FUEGO = lava (mata AGUA), AGUA = charco (mata FUEGO)
-        public Peligro(float x, float y, float ancho, float alto, Jugador.Tipo tipo) {
-            rect = new Rectangle(x, y, ancho, alto); this.tipo = tipo;
+        public Rectangle rect = new Rectangle();
+        public boolean lava = true;
+
+        public Peligro() { }
+
+        public Peligro(float x, float y, float ancho, float alto, boolean lava) {
+            rect.set(x, y, ancho, alto);
+            this.lava = lava;
         }
     }
+
+    /** Coleccionable. Si es secreta vale un poco mas y brilla distinto. */
     public static class Gema {
-        public Rectangle rect;
-        public boolean tomada = false;
-        public float fase;
-        public Gema(float x, float y) { rect = new Rectangle(x, y, 22, 22); fase = (float)(Math.random()*6); }
+        public Rectangle rect = new Rectangle();
+        public boolean secreta = false;
+
+        public Gema() { }
+
+        public Gema(float x, float y) {
+            rect.set(x, y, 22f, 22f);
+        }
     }
+
+    /**
+     * Placa de presion: se mantiene activa mientras alguien (o una caja) la pisa.
+     * elemento: AMBOS, FUEGO o AGUA.
+     */
+    public static class Boton {
+        public Rectangle rect = new Rectangle(0f, 0f, 56f, 12f);
+        public int id = 1;
+        public String elemento = "AMBOS";
+
+        public Boton() { }
+
+        public Boton(float x, float y, int id, String elemento) {
+            rect.set(x, y, 56f, 12f);
+            this.id = id;
+            this.elemento = elemento;
+        }
+    }
+
+    /**
+     * Palanca de un solo uso. orden > 0 la vuelve parte de una secuencia:
+     * solo se puede activar cuando las anteriores del mismo grupo ya estan activas.
+     */
+    public static class Palanca {
+        public Rectangle rect = new Rectangle(0f, 0f, 28f, 44f);
+        public int id = 1;
+        public String elemento = "AMBOS";
+        public int orden = 0;
+        public int grupo = 1;
+
+        public Palanca() { }
+
+        public Palanca(float x, float y, int id, String elemento) {
+            rect.set(x, y, 28f, 44f);
+            this.id = id;
+            this.elemento = elemento;
+        }
+    }
+
+    /**
+     * Puerta: bloquea el paso mientras esta cerrada.
+     * modo=TODAS exige que todos los controles de su id esten activos.
+     * duracion > 0 la mantiene abierta unos segundos al activarse.
+     * puente=true hace lo contrario: es solida cuando esta activa (puente de energia).
+     */
+    public static class Puerta {
+        public Rectangle rect = new Rectangle(0f, 0f, 18f, 250f);
+        public int id = 1;
+        public String modo = "ALGUNA";
+        public float duracion = 0f;
+        public boolean puente = false;
+
+        public Puerta() { }
+
+        public Puerta(float x, float y, float ancho, float alto, int id, String modo, float duracion, boolean puente) {
+            rect.set(x, y, ancho, alto);
+            this.id = id;
+            this.modo = modo;
+            this.duracion = duracion;
+            this.puente = puente;
+        }
+    }
+
+    /** Plataforma que va y vuelve entre su posicion inicial y (finX, finY). */
     public static class PlataformaMovil {
-        public Rectangle rect;
-        public float x0, x1, velocidad, t;
-        public PlataformaMovil(float x, float y, float ancho, float alto, float x1, float velocidad) {
-            rect = new Rectangle(x, y, ancho, alto); x0 = x; this.x1 = x1; this.velocidad = velocidad;
+        public Rectangle rect = new Rectangle(0f, 0f, 100f, 18f);
+        public float finX = 300f;
+        public float finY = 0f;
+        public float velocidad = Configuracion.VELOCIDAD_PLATAFORMA_MOVIL;
+        public int id = 0; // 0 = siempre se mueve; >0 = necesita el control de ese id
+
+        public PlataformaMovil() { }
+
+        public PlataformaMovil(float x, float y, float ancho, float alto, float finX, float finY,
+                               float velocidad, int id) {
+            rect.set(x, y, ancho, alto);
+            this.finX = finX;
+            this.finY = finY;
+            this.velocidad = velocidad;
+            this.id = id;
         }
-        public void actualizar(float dt, float tiempo) {
-            float k = (float)((Math.sin(tiempo * velocidad) + 1) / 2.0);
-            rect.x = x0 + (x1 - x0) * k;
+    }
+
+    /** Caja empujable. Las pesadas necesitan que los dos personajes empujen. */
+    public static class Caja {
+        public Rectangle rect = new Rectangle(0f, 0f, Configuracion.ANCHO_CAJA, Configuracion.ALTO_CAJA);
+        public boolean pesada = false;
+
+        public Caja() { }
+
+        public Caja(float x, float y, boolean pesada) {
+            rect.set(x, y, Configuracion.ANCHO_CAJA, Configuracion.ALTO_CAJA);
+            this.pesada = pesada;
         }
     }
 
-    public List<Rectangle> solidos = new ArrayList<>();
-    public List<Peligro> peligros = new ArrayList<>();
-    public List<Gema> gemas = new ArrayList<>();
-    public List<PlataformaMovil> moviles = new ArrayList<>();
-    public Rectangle boton;
-    public Rectangle puerta;
-    public boolean puertaAbierta = false;
-    public boolean botonPresionado = false;
-    public Rectangle salidaFuego, salidaAgua;
-    public Vector2 origenFuego = new Vector2(60, 120);
-    public Vector2 origenAgua = new Vector2(110, 120);
+    // =========================================================
+    //                    AYUDAS
+    // =========================================================
 
-    public static Nivel crearNivel(int indice) {
-        Nivel n = new Nivel();
-        n.solidos.add(new Rectangle(0, 0, MUNDO_ANCHO, 30));
-        n.solidos.add(new Rectangle(0, 0, 20, MUNDO_ALTO));
-        n.solidos.add(new Rectangle(MUNDO_ANCHO - 20, 0, 20, MUNDO_ALTO));
-
-        if (indice == 0) {
-            // NIVEL 1: movimiento y salto + puerta/boton simple
-            n.origenFuego.set(60, 60); n.origenAgua.set(120, 60);
-            n.solidos.add(new Rectangle(150, 90, 180, 22));
-            n.solidos.add(new Rectangle(420, 170, 180, 22));
-            n.solidos.add(new Rectangle(650, 90, 150, 22));
-            n.puerta = new Rectangle(470, 30, 24, 160);
-            n.boton = new Rectangle(220, 112, 46, 14);
-            n.salidaFuego = new Rectangle(830, 30, 50, 70);
-            n.salidaAgua = new Rectangle(890, 30, 50, 70);
-            n.gemas.add(new Gema(500, 230));
-            n.gemas.add(new Gema(700, 140));
-        } else if (indice == 1) {
-            // NIVEL 2: lava y agua
-            n.origenFuego.set(60, 60); n.origenAgua.set(120, 60);
-            n.peligros.add(new Peligro(320, 30, 120, 22, Jugador.Tipo.FUEGO));
-            n.peligros.add(new Peligro(520, 30, 120, 22, Jugador.Tipo.AGUA));
-            n.solidos.add(new Rectangle(150, 90, 160, 22));
-            n.solidos.add(new Rectangle(400, 170, 160, 22));
-            n.solidos.add(new Rectangle(650, 90, 160, 22));
-            n.puerta = new Rectangle(470, 30, 24, 160);
-            n.boton = new Rectangle(200, 112, 46, 14);
-            n.salidaFuego = new Rectangle(830, 30, 50, 70);
-            n.salidaAgua = new Rectangle(890, 30, 50, 70);
-            n.gemas.add(new Gema(460, 210));
-            n.gemas.add(new Gema(700, 140));
-            n.gemas.add(new Gema(380, 60));
-        } else {
-            // NIVEL 3: plataforma movil + cooperacion
-            n.origenFuego.set(60, 60); n.origenAgua.set(120, 60);
-            n.solidos.add(new Rectangle(100, 90, 150, 22));
-            n.solidos.add(new Rectangle(700, 90, 150, 22));
-            n.solidos.add(new Rectangle(380, 190, 200, 22));
-            n.moviles.add(new PlataformaMovil(300, 140, 110, 20, 550, 1.2f));
-            n.peligros.add(new Peligro(260, 30, 440, 22, Jugador.Tipo.FUEGO));
-            n.solidos.add(new Rectangle(440, 30, 80, 24));
-            n.puerta = new Rectangle(600, 30, 24, 160);
-            n.boton = new Rectangle(130, 112, 46, 14);
-            n.salidaFuego = new Rectangle(830, 30, 50, 70);
-            n.salidaAgua = new Rectangle(890, 30, 50, 70);
-            n.gemas.add(new Gema(460, 230));
-            n.gemas.add(new Gema(750, 140));
-            n.gemas.add(new Gema(480, 60));
-        }
-        return n;
+    /** Corrige datos incompletos o invalidos despues de cargar un JSON. */
+    public void normalizar() {
+        if (nombre == null || nombre.trim().isEmpty()) nombre = "Nuevo nivel";
+        if (tema == null || tema.trim().isEmpty()) tema = "TEMPLO";
+        if (pista == null) pista = "";
+        if (autor == null) autor = "";
+        ancho = limitar(ancho, Configuracion.ANCHO_MINIMO_NIVEL, Configuracion.ANCHO_MAXIMO_NIVEL);
+        alto = limitar(alto, Configuracion.ALTO_MINIMO_NIVEL, Configuracion.ALTO_MAXIMO_NIVEL);
+        if (salidaFuego == null) salidaFuego = new Rectangle(ancho - 140f, 30f, 60f, 80f);
+        if (salidaAgua == null) salidaAgua = new Rectangle(ancho - 70f, 30f, 60f, 80f);
+        if (plataformas == null) plataformas = new Plataforma[0];
+        if (peligros == null) peligros = new Peligro[0];
+        if (gemas == null) gemas = new Gema[0];
+        if (botones == null) botones = new Boton[0];
+        if (palancas == null) palancas = new Palanca[0];
+        if (puertas == null) puertas = new Puerta[0];
+        if (moviles == null) moviles = new PlataformaMovil[0];
+        if (cajas == null) cajas = new Caja[0];
+        formato = FORMATO_ACTUAL;
     }
 
-    /** Solidos efectivos segun puerta abierta/cerrada + moviles. */
-    public List<Rectangle> solidosEfectivos() {
-        List<Rectangle> salida = new ArrayList<>(solidos);
-        if (!puertaAbierta && puerta != null) salida.add(new Rectangle(puerta));
-        for (PlataformaMovil m : moviles) salida.add(new Rectangle(m.rect));
-        return salida;
+    private static float limitar(float valor, float minimo, float maximo) {
+        if (Float.isNaN(valor) || Float.isInfinite(valor)) return minimo;
+        return Math.max(minimo, Math.min(maximo, valor));
     }
 
-    public int mascaraGemas() {
-        int m = 0;
-        for (int i = 0; i < gemas.size(); i++) if (gemas.get(i).tomada) m |= (1 << i);
-        return m;
+    public void agregar(Plataforma objeto) { plataformas = agregar(plataformas, objeto); }
+    public void agregar(Peligro objeto) { peligros = agregar(peligros, objeto); }
+    public void agregar(Gema objeto) { gemas = agregar(gemas, objeto); }
+    public void agregar(Boton objeto) { botones = agregar(botones, objeto); }
+    public void agregar(Palanca objeto) { palancas = agregar(palancas, objeto); }
+    public void agregar(Puerta objeto) { puertas = agregar(puertas, objeto); }
+    public void agregar(PlataformaMovil objeto) { moviles = agregar(moviles, objeto); }
+    public void agregar(Caja objeto) { cajas = agregar(cajas, objeto); }
+
+    private static <T> T[] agregar(T[] arreglo, T objeto) {
+        T[] nuevo = Arrays.copyOf(arreglo, arreglo.length + 1);
+        nuevo[arreglo.length] = objeto;
+        return nuevo;
     }
-    public void aplicarMascaraGemas(int mascara) {
-        for (int i = 0; i < gemas.size(); i++) if ((mascara & (1 << i)) != 0) gemas.get(i).tomada = true;
+
+    public boolean esDeFuego(String elemento) { return "FUEGO".equalsIgnoreCase(elemento); }
+    public boolean esDeAgua(String elemento) { return "AGUA".equalsIgnoreCase(elemento); }
+    public boolean esDeAmbos(String elemento) { return elemento == null || elemento.equalsIgnoreCase("AMBOS"); }
+
+    public static String nombreTema(String tema) {
+        if ("CAVERNA".equals(tema)) return "Caverna de cristal";
+        if ("CIELO".equals(tema)) return "Templo en las nubes";
+        if ("HIELO".equals(tema)) return "Caverna helada";
+        if ("VOLCAN".equals(tema)) return "Corazon del volcan";
+        if ("RUINAS".equals(tema)) return "Ruinas olvidadas";
+        if ("LABORATORIO".equals(tema)) return "Laboratorio elemental";
+        if ("BOSQUE".equals(tema)) return "Bosque antiguo";
+        if ("COSMOS".equals(tema)) return "Frontera cosmica";
+        if ("FINAL".equals(tema)) return "Santuario de los elementos";
+        return "Templo elemental";
     }
 }

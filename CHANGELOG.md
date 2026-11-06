@@ -1,41 +1,72 @@
 # Changelog
 
-Todos los cambios importantes de este proyecto se documentan en este archivo.
+Todos los cambios importantes del proyecto se documentan en este archivo.
 
-El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
-y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
+El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
+El proyecto usa versionado semantico.
 
-## [Unreleased]
+## [1.2.0] - 2026-11-06
+
+### Added
+
+- Fondos multicapa con parallax, decoracion, iluminacion ambiental y particulas para TEMPLO, VOLCAN, CAVERNA, BOSQUE, LABORATORIO, HIELO, CIELO, RUINAS y FINAL.
+- Personajes humanoides por piezas con animaciones de reposo, caminata, salto, caida, interaccion, victoria y derrota.
+- Nuevo menu principal con titulo protagonista, avatares de Fuego y Agua, botones en dos columnas, atajos de teclado y panel de progreso.
+- Botones con hover, brillo, acento lateral y ajuste automatico de texto para evitar recortes.
+- Validacion automatica de conectividad de los diez niveles: superficies pisables, origenes, salidas y mecanismos alcanzables por saltos posibles.
+- Gemas secretas en las rutas altas opcionales de los niveles 2 y 5.
+- Distribucion Windows autocontenida con `jpackage`, runtime incluido, lanzador `.exe`, ZIP portable y tarea Gradle `distWindows`/`dist`.
+- Capturas automaticas de las pantallas desde la prueba de humo OpenGL.
+- Icono propio `logo.png` en la ventana y en la distribucion.
+
+### Changed
+
+- HUD y pantallas de niveles, ranking, online, ajustes, resultados, derrota y final con mejor contraste, jerarquia y espaciado.
+- El ranking muestra cinco logros destacados sin invadir la zona de records.
+- La paleta del editor distribuye las 16 herramientas dentro del panel y por encima de la barra de estado.
+- El porcentaje de volumen ya no se superpone con los botones `-` y `+`.
+- La pantalla completa guardada se aplica al iniciar el juego.
+- `points` y datos persistentes se mantienen en `%USERPROFILE%\.elemental-escape`.
+- README actualizado a 10 niveles, Java 8 fuente, pruebas, editor, online y distribucion.
+- Version del proyecto y del JAR actualizada a `1.2.0`.
+
+### Fixed
+
+- Texto de botones largos que podia quedar cortado en paneles estrechos.
+- Boton inferior de la paleta del editor que quedaba tapado por la barra de estado.
+- Separador de logros que podia cruzarse con el texto en el ranking.
+- Porcentaje de volumen que se solapaba con los controles de ajuste.
+
+### Verified
+
+- `:core:pruebas`: 107 pruebas, 0 fallos.
+- `:lwjgl3:pruebasUI`: menu, niveles, online, ranking, ajustes, editor y juego local abiertos y cerrados con OpenGL real.
+- `dist\Elemental Escape\Elemental Escape.exe` inicia correctamente con runtime incluido.
 
 ## [0.3.0] - 2026-09-28
 
 ### Changed
-- Código pasado a español: `Main` → `Juego`, `MenuScreen` → `MenuPrincipal`, `GameScreen` → `PantallaJuego`, `Player` → `Jugador`, `Level` → `Nivel`, `NetManager` → `GestorRed`, `Draw` → `Dibujo` (misma lógica, sin cambios de gameplay).
-- `Lwjgl3Launcher` ahora instancia `Juego`.
+
+- Codigo pasado a espanol: `Main` a `Juego`, `MenuScreen` a `MenuPrincipal`, `GameScreen` a `PantallaJuego`, `Player` a `Jugador`, `Level` a `Nivel`, `NetManager` a `GestorRed` y `Draw` a `Dibujo`.
 
 ## [0.2.0] - 2026-09-24
 
 ### Added
-- `Main`: punto de entrada `Game` que abre `MenuScreen`, sin assets externos.
-- `MenuScreen`: menú con opciones Ser Host (Fuego), Unirse como Cliente (Agua, pide IP del host) y Jugar Local 2P; muestra IP local y puerto `54555`.
-- `Player`: física de plataformas AABB (gravedad, salto, colisión por ejes), estados `FUEGO`/`AGUA`, animación squash & stretch, respawn y vidas.
-- `Level`: 3 niveles jugables con plataformas estáticas, 1 plataforma móvil, hazards de lava/agua, botón de presión, puerta, salidas diferenciadas, gemas y spawns.
-- `GameScreen`: loop de juego con hazards que matan al personaje contrario, botón que abre la puerta, gemas (+100 pts), 3 vidas con reinicio (`R`), victoria por salidas simultáneas (+500 pts) y HUD con nivel/puntos/vidas/estado de red.
-- `NetManager`: red TCP cliente-servidor (`ServerSocket`/`Socket`, puerto `54555`) que sincroniza 20 veces/s posición, velocidad, dirección, animación, vida, gemas, nivel y victoria entre las dos PCs.
-- `Draw`: dibujado solo con `SpriteBatch` (píxel blanco + círculo generados por `Pixmap`), sin `ShapeRenderer`.
-- `Lwjgl3Launcher`: ventana `960x540`.
+
+- Menu con host, cliente y juego local.
+- Fisica AABB, salto variable, vidas y respawn.
+- Tres niveles iniciales con plataformas, peligros, botones, puertas, gemas y salidas.
+- Red TCP cliente-servidor en el puerto `54555`.
+- Graficos procedurales sin `ShapeRenderer`.
 
 ### Fixed
-- Salto `780` → `820` y alturas de plataformas rebajadas a pasos de `80-100px` (tope de salto `~153px`).
-- Nivel 2: plataformas en `140`/`220` (paso de `110px`, muy justo) → `90`/`170`.
-- Nivel 3: plataforma central en `260` (paso de `140px`, imposible de alcanzar) → `190`; plataforma móvil `150` → `140`; laterales `120` → `90`; puerta `230` → `160`.
-- Puertas con tope en `190`: no se pueden saltar por arriba, obligan a cooperar con el botón.
-- Gemas y botones reubicados sobre las plataformas nuevas.
-- `MenuScreen`/`GameScreen`: `return` inmediato tras cada `setScreen` (causaba `IndexBufferObject cannot be used after it has been disposed` al pulsar `3`).
-- Render migrado a solo `SpriteBatch` (el `ShapeRenderer` crasheaba el driver AMD `atio6axx.dll` en RX 570); `Lwjgl3Launcher` con emulación `GL30 3.2`, vsync off y `60` FPS.
-- `settings.gradle`: eliminado el módulo `html` (el plugin GWT rompía el import en Eclipse con Gradle `9.7.1`, error `Could not create task ':html:test'`).
+
+- Alturas y distancias de salto ajustadas para que las plataformas fueran alcanzables.
+- Puertas con tope para impedir saltarlas por arriba.
+- Render migrado a `SpriteBatch` por un fallo del driver AMD `atio6axx.dll`.
 
 ## [0.1.0] - 2026-09-24
 
 ### Added
-- Creación del proyecto con `gdx-liftoff` (`Core` + `Desktop LWJGL3`, plantilla `Classic`, paquete `io.github.elementalescape`).
+
+- Creacion del proyecto con `gdx-liftoff` (Core + Desktop LWJGL3).

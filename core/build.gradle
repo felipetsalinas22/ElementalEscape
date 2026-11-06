@@ -19,3 +19,14 @@ dependencies {
 jar {
   duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
+
+// Pruebas sin ventana: validacion, fisica, mecanismos, puntuacion,
+// persistencia JSON y red en localhost. Ejecutar con: gradlew :core:pruebas
+tasks.register('pruebas', JavaExec) {
+  group = 'verification'
+  description = 'Ejecuta las pruebas automaticas de Elemental Escape sin abrir la ventana.'
+  dependsOn classes
+  mainClass = 'io.github.ElementalEscape.Pruebas'
+  classpath = sourceSets.main.runtimeClasspath
+  standardInput = System.in
+}

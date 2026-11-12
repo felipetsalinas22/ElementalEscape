@@ -439,7 +439,8 @@ public class Partida {
                     break;
                 }
             }
-            if (!activo) {
+            if (!activo && esDeAmbos(b.elemento)) {
+                // Las cajas solo pueden mantener placas neutrales.
                 for (CajaEstado c : cajas) {
                     if (c.rect.overlaps(b.rect)) { activo = true; break; }
                 }
@@ -551,9 +552,14 @@ public class Partida {
     }
 
     private boolean elementoPermitido(String elemento, Jugador.Tipo tipo) {
-        if (elemento == null || elemento.equalsIgnoreCase("AMBOS")) return true;
-        return "FUEGO".equalsIgnoreCase(elemento) && tipo == Jugador.Tipo.FUEGO
-            || "AGUA".equalsIgnoreCase(elemento) && tipo == Jugador.Tipo.AGUA;
+        if (esDeAmbos(elemento)) return true;
+        if ("FUEGO".equalsIgnoreCase(elemento)) return tipo == Jugador.Tipo.FUEGO;
+        if ("AGUA".equalsIgnoreCase(elemento)) return tipo == Jugador.Tipo.AGUA;
+        return false;
+    }
+
+    private static boolean esDeAmbos(String elemento) {
+        return elemento == null || elemento.trim().isEmpty() || "AMBOS".equalsIgnoreCase(elemento);
     }
 
     // =========================================================

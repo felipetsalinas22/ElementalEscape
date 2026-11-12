@@ -30,11 +30,21 @@ public final class ValidadorNivel {
                 + " y " + (int) Configuracion.ALTO_MAXIMO_NIVEL + ".");
 
         Rectangle zona = new Rectangle(0f, 0f, n.ancho, n.alto);
+        float techoSeguro = n.alto - Configuracion.MARGEN_HUD_SUPERIOR;
+        float pisoSeguro = Configuracion.MARGEN_HUD_INFERIOR;
         if (!zona.contains(n.origenFuegoX, n.origenFuegoY)) errores.add("El origen de Fuego esta fuera del escenario.");
         if (!zona.contains(n.origenAguaX, n.origenAguaY)) errores.add("El origen de Agua esta fuera del escenario.");
         if (!zona.contains(n.salidaFuego)) errores.add("La salida de Fuego esta fuera del escenario.");
         if (!zona.contains(n.salidaAgua)) errores.add("La salida de Agua esta fuera del escenario.");
         if (n.salidaFuego.overlaps(n.salidaAgua)) errores.add("Las dos salidas no pueden estar superpuestas.");
+        if (n.origenFuegoY + Configuracion.ALTO_PERSONAJE > techoSeguro)
+            errores.add("El origen de Fuego queda tapado por el HUD.");
+        if (n.origenAguaY + Configuracion.ALTO_PERSONAJE > techoSeguro)
+            errores.add("El origen de Agua queda tapado por el HUD.");
+        if (n.salidaFuego.y + n.salidaFuego.height > techoSeguro)
+            errores.add("La salida de Fuego queda tapada por el HUD.");
+        if (n.salidaAgua.y + n.salidaAgua.height > techoSeguro)
+            errores.add("La salida de Agua queda tapada por el HUD.");
 
         if (!tieneApoyo(n, n.origenFuegoX, n.origenFuegoY))
             errores.add("El origen de Fuego no tiene una plataforma justo debajo.");
@@ -52,10 +62,18 @@ public final class ValidadorNivel {
         for (Nivel.Boton b : n.botones) {
             if (b.id <= 0) errores.add("Hay una placa sin identificador (id).");
             if (!elementoValido(b.elemento)) errores.add("Una placa tiene un elemento invalido: " + b.elemento);
+            if (b.rect.y + b.rect.height > techoSeguro)
+                errores.add("Una placa queda tapada por el HUD.");
         }
         for (Nivel.Palanca p : n.palancas) {
             if (p.id <= 0) errores.add("Hay una palanca sin identificador (id).");
             if (!elementoValido(p.elemento)) errores.add("Una palanca tiene un elemento invalido: " + p.elemento);
+            if (p.rect.y + p.rect.height > techoSeguro)
+                errores.add("Una palanca queda tapada por el HUD.");
+        }
+        for (Nivel.Puerta p : n.puertas) {
+            if (p.rect.y + p.rect.height > techoSeguro)
+                errores.add("Una puerta/puente queda tapado por el HUD.");
         }
 
         // Las secuencias deben tener ordenes 1, 2, 3... sin repetir dentro del grupo.
@@ -79,19 +97,33 @@ public final class ValidadorNivel {
         for (Nivel.Gema g : n.gemas) {
             if (!zona.contains(g.rect)) errores.add("Hay una gema fuera del escenario.");
             if (tocaSolido(n, g.rect)) errores.add("Hay una gema dentro de una plataforma.");
+            if (g.rect.y + g.rect.height > techoSeguro)
+                errores.add("Hay una gema tapada por el HUD.");
         }
         for (Nivel.PlataformaMovil m : n.moviles) {
             if (!zona.contains(m.rect)) errores.add("Una plataforma movil empieza fuera del escenario.");
             if (m.finX < 10f || m.finX > n.ancho - 10f || m.finY < 10f || m.finY > n.alto - 10f)
                 errores.add("Una plataforma movil termina fuera del escenario.");
+            if (m.rect.y + m.rect.height > techoSeguro)
+                errores.add("Una plataforma movil empieza en zona tapada por el HUD.");
+            if (m.finY + m.rect.height > techoSeguro)
+                errores.add("Una plataforma movil termina en zona tapada por el HUD.");
             if (m.velocidad <= 0f) errores.add("Una plataforma movil tiene velocidad 0.");
         }
         for (Nivel.Caja c : n.cajas) {
             if (!zona.contains(c.rect)) errores.add("Hay una caja fuera del escenario.");
             if (tocaSolido(n, c.rect)) errores.add("Hay una caja dentro de una plataforma.");
+            if (c.rect.y + c.rect.height > techoSeguro)
+                errores.add("Hay una caja tapada por el HUD.");
         }
         for (Nivel.Peligro p : n.peligros) {
             if (!zona.contains(p.rect)) errores.add("Hay un peligro fuera del escenario.");
+        }
+        for (Nivel.Plataforma p : n.plataformas) {
+            if (p == null || p.rect == null) continue;
+            if (p.limite || esBorde(n, p)) continue;
+            if (p.rect.y + p.rect.height > techoSeguro)
+                errores.add("Hay una plataforma jugable tapada por el HUD.");
         }
 
         // Las salidas deben ser alcanzables "a simple vista": no estan dentro de un muro.
@@ -322,10 +354,26 @@ public final class ValidadorNivel {
 
     private static boolean tieneApoyo(Nivel n, float x, float y) {
         for (Nivel.Plataforma p : n.plataformas) {
+            if (p == null || p.rect == null) continue;
             if (x + Configuracion.ANCHO_PERSONAJE * 0.5f < p.rect.x) continue;
             if (x + Configuracion.ANCHO_PERSONAJE * 0.5f > p.rect.x + p.rect.width) continue;
             if (Math.abs(p.rect.y + p.rect.height - y) <= 2.5f) return true;
         }
         return false;
+    }
+
+    private static boolean esBorde(Nivel n, Nivel.Plataforma p) {
+        if (p == null || p.rect == null) return false;
+        Rectangle r = p.rect;
+        float e = 0.6f;
+        boolean suelo = Math.abs(r.x) < e && Math.abs(r.y) < e
+            && Math.abs(r.width - n.ancho) < e && Math.abs(r.height - 30f) < e;
+        boolean izquierda = Math.abs(r.x) < e && Math.abs(r.y) < e
+            && Math.abs(r.width - 18f) < e && Math.abs(r.height - n.alto) < e;
+        boolean derecha = Math.abs(r.x + r.width - n.ancho) < e && Math.abs(r.y) < e
+            && Math.abs(r.width - 18f) < e && Math.abs(r.height - n.alto) < e;
+        boolean techo = Math.abs(r.x) < e && Math.abs(r.y + r.height - n.alto) < e
+            && Math.abs(r.width - n.ancho) < e && Math.abs(r.height - 16f) < e;
+        return suelo || izquierda || derecha || techo;
     }
 }

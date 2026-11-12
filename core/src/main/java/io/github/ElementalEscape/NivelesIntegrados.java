@@ -1,10 +1,9 @@
 package io.github.ElementalEscape;
 
 /**
- * Los ocho niveles del modo campana, rediseñados desde cero con dificultad
- * progresiva, cooperación obligatoria y elementos elemento-estrictos.
- * Cada nivel es un rompecabezas de plataformas que requiere que Fuego y
- * Agua trabajen juntos para llegar a sus respectivas salidas.
+ * Campana de 8 niveles rediseñada: rompecabezas cooperativos con dificultad
+ * progresiva, rutas con sentido, activaciones elemento-estrictas y cooperación
+ * obligatoria. Ningun elemento jugable importante se coloca en la franja del HUD.
  */
 public final class NivelesIntegrados {
     private NivelesIntegrados() { }
@@ -34,370 +33,421 @@ public final class NivelesIntegrados {
     }
 
     // =========================================================
-    //                        NIVELES
+    // NIVEL 1 - Introduccion cooperativa (mas elaborado)
+    // Recorrido: Fuego toma ruta izquierda alta para palanca roja que abre
+    // puerta azul; Agua toma ruta derecha para palanca azul que abre puerta roja.
+    // Ambos deben activar sus mecanismos para que el otro avance y reunirse al final.
     // =========================================================
-
-    /** Nivel 1 - Introducción: movimiento básico, primeras palancas y puerta simple. */
     private static Nivel nivel1() {
         Nivel n = base("El despertar elemental", "TEMPLO",
-            "Activá la palanca roja y después la azul. Luego crucen la puerta juntos.", 960f);
-        n.origenFuegoX = 55f; n.origenFuegoY = 30f;
-        n.origenAguaX = 100f; n.origenAguaY = 30f;
-        n.salidaFuego.set(810f, 30f, 60f, 80f);
-        n.salidaAgua.set(875f, 30f, 60f, 80f);
+            "Fuego y Agua deben abrirse paso mutuamente: cada uno activa la palanca de su elemento.", 960f);
 
-        // Piso principal con tres plataformas horizontales a diferentes alturas.
-        plataforma(n, 90f, 90f, 140f, 20f, "PIEDRA");
-        plataforma(n, 300f, 90f, 180f, 20f, "PIEDRA");
-        plataforma(n, 540f, 90f, 140f, 20f, "MADERA");
-
-        // Peligras elementales separadas, al alcance del suelo.
-        peligroAgua(n, 470f, 30f, 80f, 14f);
-        peligroLava(n, 250f, 30f, 80f, 14f);
-
-        // Gemas accesibles en el camino.
-        gema(n, 180f, 135f);
-        gema(n, 350f, 205f);
-        gema(n, 590f, 150f);
-
-        // Palanca roja para Fuego (solo Fuego puede activarla).
-        palanca(n, 125f, 110f, 1, "FUEGO");
-        // Palanca azul para Agua (solo Agua puede activarla).
-        palanca(n, 220f, 110f, 2, "AGUA");
-
-        // Puerta final que se abre después de activar ambas palancas (modo ALGUNA, cualquier sirve).
-        puertaBloqueo(n, 700f, 1, "ALGUNA", 0f);
-
-        return n;
-    }
-
-    /** Nivel 2 - Primeros rompecabezas cooperativos: dos caminos separados que requieren ayuda mutua. */
-    private static Nivel nivel2() {
-        Nivel n = base("Caminos separados", "CAVERNA",
-            "Cada palanca abre la puerta del otro camino. Ambos personajes son necesarios.", 960f);
-        n.origenFuegoX = 55f; n.origenFuegoY = 30f;
-        n.origenAguaX = 855f; n.origenAguaY = 30f;
-        n.salidaFuego.set(390f, 30f, 60f, 80f);
-        n.salidaAgua.set(510f, 30f, 60f, 80f);
-
-        // Muro central que divide el nivel, con dos puertas laterales.
-        plataforma(n, 460f, 30f, 40f, 494f, "MURO");
-        puertaBloqueo(n, 330f, 1, "ALGUNA", 0f);
-        puertaBloqueo(n, 590f, 1, "ALGUNA", 0f);
-
-        // Camino de la izquierda (Fuego).
-        plataforma(n, 90f, 90f, 140f, 20f, "PIEDRA");
-        plataforma(n, 60f, 190f, 130f, 18f, "MADERA");
-        plataforma(n, 230f, 270f, 80f, 18f, "MADERA");
-        plataforma(n, 60f, 350f, 120f, 18f, "MADERA");
-        palanca(n, 120f, 110f, 1, "FUEGO");
-        peligroAgua(n, 240f, 30f, 70f, 14f);
-
-        // Camino de la derecha (Agua).
-        plataforma(n, 800f, 90f, 130f, 20f, "PIEDRA");
-        plataforma(n, 760f, 190f, 130f, 18f, "MADERA");
-        plataforma(n, 620f, 270f, 110f, 18f, "MADERA");
-        plataforma(n, 800f, 350f, 120f, 18f, "MADERA");
-        palanca(n, 840f, 110f, 2, "AGUA");
-        peligroLava(n, 650f, 30f, 70f, 14f);
-
-        // Gemas en cada camino.
-        gema(n, 150f, 140f);
-        gema(n, 100f, 240f);
-        gema(n, 280f, 320f);
-        gemaSecreta(n, 90f, 400f);
-        gema(n, 810f, 140f);
-        gemaSecreta(n, 860f, 400f);
-
-        // Mecanismo clave: una palanca en el lado izquierdo abre la puerta derecha, y viceversa.
-        // El diseño obliga a que un personaje active su palanca para que el otro pueda pasar.
-
-        return n;
-    }
-
-    /** Nivel 3 - Caminos entrelazados con secuencias de palancas y plataformas móviles. */
-    private static Nivel nivel3() {
-        Nivel n = base("El templo de los interruptores", "RUINAS",
-            "Dos placas simultáneas deben pisarse a la vez. La puerta queda abierta 7 segundos.", 960f);
-        n.origenFuegoX = 55f; n.origenFuegoY = 30f;
-        n.origenAguaX = 105f; n.origenAguaY = 30f;
-        n.salidaFuego.set(810f, 30f, 60f, 80f);
-        n.salidaAgua.set(875f, 30f, 60f, 80f);
-
-        // Dos botones de presión elementales.
-        boton(n, 250f, 30f, 1, "FUEGO");
-        boton(n, 390f, 30f, 1, "AGUA");
-        puertaBloqueo(n, 620f, 1, "TODAS", 7f);
-
-        // Plataformas verticales de apoyo en columnas separadas.
-        plataforma(n, 120f, 100f, 120f, 18f, "PIEDRA");
-        plataforma(n, 300f, 180f, 120f, 18f, "MADERA");
-        plataforma(n, 480f, 110f, 110f, 18f, "MADERA");
-        plataforma(n, 660f, 190f, 120f, 18f, "MADERA");
-
-        // Ruta alta opcional con gemas secreto s.
-        plataforma(n, 60f, 300f, 100f, 18f, "MADERA");
-        plataforma(n, 200f, 370f, 100f, 18f, "MADERA");
-        plataforma(n, 340f, 440f, 100f, 18f, "MADERA");
-
-        // Peligras elementales.
-        peligroAgua(n, 500f, 30f, 80f, 14f);
-        peligroLava(n, 700f, 30f, 70f, 14f);
-
-        // Gemas principales y secreta.
-        gema(n, 160f, 150f);
-        gema(n, 350f, 230f);
-        gema(n, 520f, 160f);
-        gemaSecreta(n, 375f, 480f);
-
-        // Secuencia implícita: primero pisar la placa Fuego, luego la placa Agua, dentro de los 7 segundos,
-        // para que la puerta TODAS se abra. Si uno falla, la puerta se cierra.
-
-        return n;
-    }
-
-    /** Nivel 4 - Ascenso vertical con plataforma móvil y palanca final. */
-    private static Nivel nivel4() {
-        Nivel n = base("La torre de los elementos", "CIELO",
-            "Suban por la torre hasta la palanca. Luego bajen y crucen la puerta.", 960f);
-        n.origenFuegoX = 55f; n.origenFuegoY = 30f;
-        n.origenAguaX = 100f; n.origenAguaY = 30f;
+        n.origenFuegoX = 40f;  n.origenFuegoY = 30f;
+        n.origenAguaX  = 90f;  n.origenAguaY  = 30f;
         n.salidaFuego.set(820f, 30f, 60f, 80f);
-        n.salidaAgua.set(880f, 30f, 60f, 80f);
+        n.salidaAgua.set(885f, 30f, 60f, 80f);
 
-        // Ascenso en zigzag con plataformas fijas.
-        plataforma(n, 70f, 90f, 140f, 18f, "PIEDRA");
-        plataforma(n, 260f, 170f, 130f, 18f, "MADERA");
-        plataforma(n, 90f, 250f, 130f, 18f, "MADERA");
-        plataforma(n, 280f, 330f, 130f, 18f, "MADERA");
-        plataforma(n, 100f, 410f, 130f, 18f, "MADERA");
-        plataforma(n, 330f, 450f, 140f, 18f, "PIEDRA");
-        palanca(n, 370f, 468f, 1, "AMBOS");
+        // Etapa 1: rutas separadas iniciales con pequeños desniveles
+        plataforma(n, 30f, 90f, 120f, 18f, "PIEDRA");
+        plataforma(n, 180f, 150f, 110f, 18f, "MADERA");
+        plataforma(n, 30f, 210f, 110f, 18f, "MADERA");
+        // Palanca roja en zona alta izquierda: solo Fuego puede alcanzarla/activarla
+        palanca(n, 55f, 228f, 1, "FUEGO");
+        gema(n, 210f, 185f);
 
-        // Plataforma móvil que desciende por la derecha, velocidad 85 unidades/seg.
-        movil(n, 500f, 340f, 100f, 18f, 640f, 340f, 85f, 0);
-        plataforma(n, 620f, 300f, 120f, 18f, "MADERA");
-        plataforma(n, 650f, 210f, 100f, 18f, "MADERA");
-        plataforma(n, 620f, 130f, 90f, 18f, "MADERA");
+        plataforma(n, 320f, 90f, 120f, 18f, "PIEDRA");
+        plataforma(n, 470f, 150f, 110f, 18f, "MADERA");
+        plataforma(n, 610f, 210f, 110f, 18f, "MADERA");
+        // Palanca azul en zona alta derecha: solo Agua
+        palanca(n, 650f, 228f, 2, "AGUA");
+        gema(n, 500f, 185f);
 
-        // Puerta al final del descenso.
-        puertaBloqueo(n, 770f, 1, "ALGUNA", 0f);
-        peligroAgua(n, 430f, 30f, 70f, 14f);
-        peligroLava(n, 520f, 30f, 70f, 14f);
+        // Peligros elementales obligan a usar rutas correctas
+        peligroLava(n, 240f, 30f, 70f, 14f);   // bloquea paso bajo para Agua
+        peligroAgua(n, 560f, 30f, 70f, 14f);   // bloquea paso bajo para Fuego
 
-        // Gemas distribuidas por el recorrido vertical.
-        gema(n, 120f, 140f);
-        gema(n, 320f, 220f);
-        gema(n, 140f, 300f);
-        gema(n, 340f, 380f);
-        gema(n, 160f, 460f);
-        gema(n, 380f, 495f);
-        gemaSecreta(n, 680f, 255f);
+        // Etapa 2: puertas cruzadas en pasillo central
+        // Puerta 1 (abierta por palanca roja de Fuego) deja pasar a Agua
+        puertaBloqueo(n, 360f, 1, "ALGUNA", 0f);
+        // Puerta 2 (abierta por palanca azul de Agua) deja pasar a Fuego
+        puertaBloqueo(n, 430f, 2, "ALGUNA", 0f);
 
-        // El salto final desde la plataforma móvil hasta el requiere sincronización:
-        // un personaje debe activar la palanca AMBOS mientras el otro está en posición.
+        // Plataformas de apoyo para cruzar tras abrir
+        plataforma(n, 330f, 120f, 70f, 18f, "MADERA");
+        plataforma(n, 440f, 120f, 70f, 18f, "MADERA");
+        gema(n, 395f, 155f);
+
+        // Etapa 3: placa conjunta final abre ultima puerta a salidas
+        plataforma(n, 700f, 100f, 90f, 18f, "PIEDRA");
+        boton(n, 735f, 118f, 3, "AMBOS");
+        puertaBloqueo(n, 760f, 3, "ALGUNA", 0f);
+        gema(n, 720f, 155f);
 
         return n;
     }
 
-    /** Nivel 5 - Tres salas conectadas con ruta baja y ruta alta. */
+    // =========================================================
+    // NIVEL 2 - Palancas, puertas y plataforma movil
+    // Dos salas: en la primera deben coordinar activaciones para habilitar
+    // la plataforma movil; en la segunda usarla para alcanzar palancas finales.
+    // =========================================================
+    private static Nivel nivel2() {
+        Nivel n = base("Ruedas y cerrojos", "CAVERNA",
+            "Activen los mecanismos en orden: primero habiliten la plataforma movil, luego abran la salida.", 1100f);
+
+        n.origenFuegoX = 40f;  n.origenFuegoY = 30f;
+        n.origenAguaX  = 90f;  n.origenAguaY  = 30f;
+        n.salidaFuego.set(960f, 30f, 60f, 80f);
+        n.salidaAgua.set(1020f, 30f, 60f, 80f);
+
+        // Sala 1
+        plataforma(n, 170f, 90f, 120f, 18f, "PIEDRA");
+        plataforma(n, 320f, 150f, 120f, 18f, "MADERA");
+        palanca(n, 360f, 168f, 1, "FUEGO"); // habilita movil id 1
+        gema(n, 200f, 125f);
+
+        plataforma(n, 170f, 210f, 120f, 18f, "MADERA");
+        palanca(n, 210f, 228f, 2, "AGUA"); // abre puerta intermedia id 2
+        gema(n, 350f, 185f);
+
+        // Puerta intermedia bloquea acceso a zona de movil
+        puertaBloqueo(n, 470f, 2, "ALGUNA", 0f);
+
+        // Plataforma movil controlada por palanca de fuego (id 1)
+        movil(n, 500f, 120f, 110f, 18f, 660f, 220f, 85f, 1);
+        plataforma(n, 700f, 220f, 120f, 18f, "PIEDRA");
+        // Desde plataforma movil en punto alto se alcanza palanca azul para puerta final
+        palanca(n, 740f, 238f, 3, "AGUA");
+
+        peligroLava(n, 520f, 30f, 80f, 14f);
+        peligroAgua(n, 640f, 30f, 80f, 14f);
+
+        // Sala 2 / salida
+        plataforma(n, 780f, 140f, 100f, 18f, "MADERA");
+        boton(n, 810f, 158f, 4, "FUEGO"); // Fuego mantiene paso para Agua? no, placa abre puerta 4
+        puertaBloqueo(n, 900f, 4, "ALGUNA", 0f);
+        // Palanca de agua alternativa: ambas necesarias? puerta 4 es ALGUNA asi que cualquiera - mejor TODAS no.
+        // Requiere que Fuego active placa mientras Agua pasa? placa es presion mantiene mientras pisa.
+        gema(n, 820f, 175f);
+        gema(n, 980f, 70f);
+
+        return n;
+    }
+
+    // =========================================================
+    // NIVEL 3 - Caminos separados que requieren coordinacion
+    // Lado izquierdo para Fuego, derecho para Agua; deben activar mecanismos
+    // cruzados y reunirse en zona central elevada para abrir salida.
+    // =========================================================
+    private static Nivel nivel3() {
+        Nivel n = base("Torres enfrentadas", "RUINAS",
+            "Cada uno recorre su torre y activa mecanismos para el otro. Reunanse arriba para salir.", 1100f);
+
+        n.origenFuegoX = 40f;  n.origenFuegoY = 30f;
+        n.origenAguaX  = 1040f; n.origenAguaY = 30f;
+        n.salidaFuego.set(480f, 350f, 60f, 80f);
+        n.salidaAgua.set(560f, 350f, 60f, 80f);
+
+        // Divisor central bajo (no bloquea zona alta de reunion)
+        plataforma(n, 530f, 30f, 40f, 180f, "MURO");
+
+        // Torre Fuego (izquierda)
+        plataforma(n, 30f, 100f, 120f, 18f, "PIEDRA");
+        plataforma(n, 180f, 170f, 120f, 18f, "MADERA");
+        plataforma(n, 30f, 240f, 120f, 18f, "MADERA");
+        palanca(n, 60f, 258f, 1, "FUEGO"); // abre puerta derecha baja id1
+        gema(n, 210f, 205f);
+        peligroAgua(n, 160f, 30f, 70f, 14f);
+
+        // Torre Agua (derecha)
+        plataforma(n, 950f, 100f, 120f, 18f, "PIEDRA");
+        plataforma(n, 800f, 170f, 120f, 18f, "MADERA");
+        plataforma(n, 950f, 240f, 120f, 18f, "MADERA");
+        palanca(n, 990f, 258f, 2, "AGUA"); // abre puerta izquierda baja id2
+        gema(n, 830f, 205f);
+        peligroLava(n, 870f, 30f, 70f, 14f);
+
+        // Puertas cruzadas en base
+        puertaBloqueo(n, 330f, 2, "ALGUNA", 0f); // Agua abre para Fuego
+        puertaBloqueo(n, 750f, 1, "ALGUNA", 0f); // Fuego abre para Agua
+
+        // Ruta hacia centro alto tras pasar puertas
+        plataforma(n, 360f, 120f, 140f, 18f, "MADERA");
+        plataforma(n, 600f, 120f, 140f, 18f, "MADERA");
+        plataforma(n, 420f, 200f, 120f, 18f, "MADERA");
+        plataforma(n, 560f, 200f, 120f, 18f, "MADERA");
+        plataforma(n, 480f, 280f, 140f, 18f, "PIEDRA"); // plataforma comun de reunion
+
+        // Dos placas simultaneas en reunion abren puertas de salidas
+        boton(n, 495f, 298f, 3, "FUEGO");
+        boton(n, 575f, 298f, 3, "AGUA");
+        puertaBloqueo(n, 450f, 3, "TODAS", 0f);
+        puertaBloqueo(n, 630f, 3, "TODAS", 0f);
+
+        gema(n, 500f, 235f);
+        gema(n, 580f, 235f);
+        gemaSecreta(n, 550f, 325f);
+
+        return n;
+    }
+
+    // =========================================================
+    // NIVEL 4 - Laberinto vertical con mecanismos interconectados
+    // Ascenso en etapas; palancas en distintos niveles abren rutas alternas
+    // y una plataforma movil conecta secciones.
+    // =========================================================
+    private static Nivel nivel4() {
+        Nivel n = base("Ascenso entrelazado", "CIELO",
+            "Suban coordinando palancas en distintos niveles. La plataforma movil depende de sus acciones.", 960f);
+
+        n.origenFuegoX = 40f; n.origenFuegoY = 30f;
+        n.origenAguaX  = 90f; n.origenAguaY  = 30f;
+        n.salidaFuego.set(800f, 380f, 60f, 80f);
+        n.salidaAgua.set(870f, 380f, 60f, 80f);
+
+        // Nivel 1
+        plataforma(n, 30f, 90f, 140f, 18f, "PIEDRA");
+        plataforma(n, 220f, 90f, 140f, 18f, "PIEDRA");
+        palanca(n, 260f, 108f, 1, "AGUA"); // abre acceso izq nivel 2
+        peligroLava(n, 170f, 30f, 50f, 14f);
+        gema(n, 70f, 125f);
+
+        // Nivel 2
+        puertaBloqueo(n, 150f, 1, "ALGUNA", 0f);
+        plataforma(n, 30f, 170f, 120f, 18f, "MADERA");
+        plataforma(n, 200f, 170f, 120f, 18f, "MADERA");
+        palanca(n, 60f, 188f, 2, "FUEGO"); // activa movil id 2
+        gema(n, 240f, 205f);
+
+        // Conexión móvil entre nivel 2 y 3
+        movil(n, 360f, 170f, 110f, 18f, 360f, 260f, 80f, 2);
+        plataforma(n, 500f, 260f, 140f, 18f, "PIEDRA");
+        palanca(n, 560f, 278f, 3, "AMBOS"); // abre puerta a nivel 4
+
+        // Nivel 3 derecha
+        plataforma(n, 680f, 170f, 120f, 18f, "MADERA");
+        plataforma(n, 820f, 220f, 110f, 18f, "MADERA");
+        puertaBloqueo(n, 640f, 3, "ALGUNA", 0f);
+        peligroAgua(n, 420f, 30f, 80f, 14f);
+        gema(n, 720f, 205f);
+
+        // Nivel 4 superior - requiere ambos para placa final
+        plataforma(n, 680f, 300f, 120f, 18f, "MADERA");
+        plataforma(n, 820f, 300f, 110f, 18f, "PIEDRA");
+        boton(n, 700f, 318f, 4, "FUEGO");
+        boton(n, 850f, 318f, 4, "AGUA");
+        // puertas frente a salidas
+        puertaBloqueo(n, 770f, 4, "TODAS", 0f);
+        gema(n, 860f, 335f);
+        gemaSecreta(n, 540f, 295f);
+
+        return n;
+    }
+
+    // =========================================================
+    // NIVEL 5 - Varias habitaciones y mecanismos en orden determinado
+    // Tres habitaciones; hay que resolver A->B->C, con secuencia de palancas
+    // y una placa que debe mantenerse mientras el otro avanza.
+    // =========================================================
     private static Nivel nivel5() {
-        Nivel n = base("Salas conectadas", "RUINAS",
-            "Pueden avanzar por el suelo o por las repisas. La palanca de la sala central abre la salida.", 1200f);
-        n.origenFuegoX = 55f; n.origenFuegoY = 30f;
-        n.origenAguaX = 100f; n.origenAguaY = 30f;
+        Nivel n = base("Salas del sello", "HIELO",
+            "Resuelvan las salas en orden. Una secuencia y una placa mantenida son la clave.", 1200f);
+
+        n.origenFuegoX = 40f; n.origenFuegoY = 30f;
+        n.origenAguaX  = 85f; n.origenAguaY  = 30f;
         n.salidaFuego.set(1060f, 30f, 60f, 80f);
-        n.salidaAgua.set(1120f, 30f, 60f, 80f);
+        n.salidaAgua.set(1125f, 30f, 60f, 80f);
 
-        // Murales que dejan libre la planta baja entre salas.
-        plataforma(n, 400f, 240f, 20f, 284f, "MURO");
-        plataforma(n, 800f, 240f, 20f, 284f, "MURO");
+        // Muros divisorios con puertas
+        plataforma(n, 380f, 30f, 20f, 434f, "MURO");
+        plataforma(n, 780f, 30f, 20f, 434f, "MURO");
 
-        // Sala A: dos repisas y gemas. Riesgo de peligros elementales.
-        plataforma(n, 90f, 100f, 110f, 18f, "MADERA");
-        plataforma(n, 230f, 180f, 110f, 18f, "MADERA");
-        plataforma(n, 350f, 120f, 100f, 18f, "MADERA");
-        peligroAgua(n, 200f, 30f, 60f, 14f);
-        peligroLava(n, 300f, 30f, 60f, 14f);
+        // Sala A
+        plataforma(n, 120f, 100f, 110f, 18f, "MADERA");
+        plataforma(n, 260f, 170f, 100f, 18f, "MADERA");
+        palancaSecuencia(n, 150f, 118f, 1, "FUEGO", 1, 1);
+        palancaSecuencia(n, 290f, 188f, 1, "AGUA", 2, 1);
+        puertaBloqueo(n, 360f, 1, "TODAS", 0f); // paso A->B requiere secuencia
+        gema(n, 300f, 205f);
+        peligroLava(n, 220f, 30f, 50f, 14f);
 
-        // Sala B: palanca sobre repisa a la que se llega por dos caminos.
-        // Requiere que ambos personajes alcancen la repisa simultáneamente.
-        plataforma(n, 430f, 110f, 110f, 18f, "MADERA");
-        plataforma(n, 550f, 190f, 120f, 18f, "MADERA");
-        plataforma(n, 680f, 130f, 110f, 18f, "MADERA");
-        palanca(n, 590f, 208f, 1, "AMBOS");
-        puertaBloqueo(n, 1000f, 1, "ALGUNA", 0f);
+        // Sala B
+        plataforma(n, 420f, 100f, 120f, 18f, "PIEDRA");
+        plataforma(n, 560f, 180f, 120f, 18f, "MADERA");
+        plataforma(n, 670f, 100f, 90f, 18f, "MADERA");
+        boton(n, 450f, 118f, 2, "AGUA"); // Agua mantiene, Fuego pasa por puerta temporal
+        puertaBloqueo(n, 760f, 2, "ALGUNA", 4.5f);
+        gema(n, 590f, 215f);
+        gema(n, 700f, 135f);
+        peligroAgua(n, 520f, 30f, 60f, 14f);
 
-        // Sala C: salida protegida y última gema.
-        plataforma(n, 900f, 120f, 90f, 18f, "MADERA");
-        peligroLava(n, 890f, 30f, 50f, 14f);
-
-        // Gemas finales y secreta.
-        gema(n, 130f, 140f);
-        gema(n, 270f, 220f);
-        gemaSecreta(n, 390f, 160f);
-        gema(n, 470f, 150f);
-        gema(n, 630f, 240f);
-        gema(n, 930f, 160f);
-
-        // La sala central obliga a que ambos actúen juntos sobre la palanca AMBOS antes de poder salir.
+        // Sala C
+        plataforma(n, 820f, 100f, 120f, 18f, "MADERA");
+        plataforma(n, 960f, 170f, 100f, 18f, "MADERA");
+        boton(n, 850f, 118f, 3, "FUEGO");
+        boton(n, 990f, 188f, 3, "AGUA");
+        puertaBloqueo(n, 1010f, 3, "TODAS", 0f);
+        gema(n, 990f, 205f);
+        gemaSecreta(n, 880f, 215f);
 
         return n;
     }
 
-    /** Nivel 6 - Cooperación fuerte: caja pesada y dos placas a la vez. */
+    // =========================================================
+    // NIVEL 6 - Recorridos extensos, rutas diferentes y obstaculos combinados
+    // Caja pesada, plataforma movil, rutas bifurcadas y reunion final.
+    // =========================================================
     private static Nivel nivel6() {
-        Nivel n = base("El corazón compartido", "VOLCAN",
-            "Empujen la caja pesada entre los dos. Despues pisen las dos placas a la vez.", 1260f);
-        n.origenFuegoX = 55f; n.origenFuegoY = 30f;
-        n.origenAguaX = 100f; n.origenAguaY = 30f;
-        n.salidaFuego.set(1120f, 30f, 60f, 80f);
-        n.salidaAgua.set(1180f, 30f, 60f, 80f);
+        Nivel n = base("Galerias cruzadas", "LABORATORIO",
+            "Rutas distintas, caja pesada y plataforma movil. Coordinen cada tramo para avanzar.", 1400f);
 
-        // Sala A: la caja pesada solo avanza si empujan los dos.
-        // Mecanismo de empuje: cada personaje debe estar en un lado de la caja.
-        caja(n, 200f, 30f, true);
-        boton(n, 320f, 30f, 1, "AMBOS");
-        puertaBloqueo(n, 430f, 1, "ALGUNA", 0f);
+        n.origenFuegoX = 40f; n.origenFuegoY = 30f;
+        n.origenAguaX  = 85f; n.origenAguaY  = 30f;
+        n.salidaFuego.set(1260f, 30f, 60f, 80f);
+        n.salidaAgua.set(1325f, 30f, 60f, 80f);
 
-        // Sala B: dos placas simultáneas con puerta temporizada TODAS (8 segundos).
-        // Requiere que ambos personajes pisen sus respectivas placas al mismo tiempo.
-        boton(n, 620f, 30f, 2, "FUEGO");
-        boton(n, 720f, 30f, 2, "AGUA");
-        puertaBloqueo(n, 840f, 2, "TODAS", 8f);
-        plataforma(n, 480f, 120f, 110f, 18f, "MADERA");
-        plataforma(n, 620f, 200f, 100f, 18f, "MADERA");
-        plataforma(n, 760f, 120f, 100f, 18f, "MADERA");
-        peligroAgua(n, 500f, 30f, 60f, 14f);
+        // Tramo 1: caja pesada sobre placa abre puerta
+        caja(n, 180f, 30f, true);
+        plataforma(n, 300f, 100f, 100f, 18f, "PIEDRA"); // acceso para empujar desde arriba? no necesario
+        boton(n, 340f, 30f, 1, "AMBOS");
+        puertaBloqueo(n, 420f, 1, "ALGUNA", 0f);
+        peligroLava(n, 260f, 30f, 40f, 14f);
+        gema(n, 320f, 135f);
 
-        // Sala C: palanca final que mantiene la puerta abierta.
-        plataforma(n, 920f, 100f, 100f, 18f, "PIEDRA");
-        palanca(n, 950f, 118f, 3, "AMBOS");
-        puertaBloqueo(n, 1060f, 3, "ALGUNA", 0f);
-        peligroLava(n, 890f, 30f, 50f, 14f);
+        // Tramo 2: rutas separadas con palancas cruzadas
+        plataforma(n, 460f, 100f, 120f, 18f, "MADERA");
+        plataforma(n, 460f, 200f, 120f, 18f, "MADERA");
+        palanca(n, 500f, 218f, 2, "FUEGO"); // abre paso bajo derecho para Agua
+        plataforma(n, 620f, 100f, 120f, 18f, "MADERA");
+        plataforma(n, 620f, 200f, 120f, 18f, "MADERA");
+        palanca(n, 660f, 218f, 3, "AGUA"); // abre paso alto para Fuego
+        puertaBloqueo(n, 580f, 3, "ALGUNA", 0f);
+        puertaBloqueo(n, 760f, 2, "ALGUNA", 0f);
+        peligroAgua(n, 520f, 30f, 60f, 14f);
+        gema(n, 500f, 135f);
+        gema(n, 660f, 135f);
 
-        // Gemas dispersas en las tres salas.
-        gema(n, 250f, 140f);
-        gema(n, 510f, 160f);
-        gema(n, 660f, 240f);
-        gema(n, 800f, 160f);
-        gemaSecreta(n, 990f, 160f);
+        // Tramo 3: plataforma movil para alcanzar zona elevada
+        movil(n, 800f, 90f, 110f, 18f, 800f, 220f, 90f, 0);
+        plataforma(n, 940f, 220f, 120f, 18f, "PIEDRA");
+        palanca(n, 980f, 238f, 4, "AMBOS");
+        puertaBloqueo(n, 1080f, 4, "ALGUNA", 0f);
+        peligroLava(n, 860f, 30f, 70f, 14f);
+        gema(n, 980f, 255f);
 
-        // Nivel completo: primero mover la caja pesada, luego presionar las dos placas a la vez,
-        // y finalmente activar la palanca final. Cualquier paso sin la cooperación requerida falla.
+        // Tramo 4: dos placas simultaneas antes de salida
+        plataforma(n, 1120f, 100f, 100f, 18f, "MADERA");
+        boton(n, 1140f, 118f, 5, "FUEGO");
+        boton(n, 1180f, 30f, 5, "AGUA");
+        puertaBloqueo(n, 1220f, 5, "TODAS", 0f);
+        gemaSecreta(n, 1150f, 155f);
 
         return n;
     }
 
-    /** Nivel 7 - Mecánicas mezcladas: plataforma móvil, puente, secuencia y caja. */
+    // =========================================================
+    // NIVEL 7 - Rompecabezas complejos, colaboracion constante
+    // Secuencia estricta, puente temporal, movil y sostener placas.
+    // =========================================================
     private static Nivel nivel7() {
-        Nivel n = baseConHuecos("El mecanismo de las tres llaves", "LABORATORIO",
-            "Crucen el abismo, abran el puente y activen las tres palancas en orden.", 1500f,
-            220f, 400f, 520f, 700f);
-        n.origenFuegoX = 55f; n.origenFuegoY = 30f;
-        n.origenAguaX = 100f; n.origenAguaY = 30f;
+        Nivel n = base("Nucleo sincronizado", "VOLCAN",
+            "Secuencia estricta, un puente activado y placas simultaneas: sin coordinacion no hay salida.", 1500f);
+
+        n.origenFuegoX = 40f; n.origenFuegoY = 30f;
+        n.origenAguaX  = 85f; n.origenAguaY  = 30f;
         n.salidaFuego.set(1360f, 30f, 60f, 80f);
-        n.salidaAgua.set(1420f, 30f, 60f, 80f);
+        n.salidaAgua.set(1425f, 30f, 60f, 80f);
 
-        // Sala A: plataforma móvil sobre el primer abismo.
-        // La plataforma se mueve de x=240 a x=370, ancho 110, velocidad 90.
-        movil(n, 240f, 110f, 110f, 18f, 370f, 110f, 90f, 0);
-        palanca(n, 430f, 30f, 1, "AMBOS");
-        puente(n, 520f, 30f, 180f, 16f, 1);
+        // Etapa 1: secuencia de 3 palancas en orden
+        plataforma(n, 160f, 100f, 110f, 18f, "MADERA");
+        plataforma(n, 300f, 170f, 110f, 18f, "MADERA");
+        plataforma(n, 440f, 240f, 110f, 18f, "MADERA");
+        palancaSecuencia(n, 190f, 118f, 1, "FUEGO", 1, 1);
+        palancaSecuencia(n, 330f, 188f, 1, "AGUA", 2, 1);
+        palancaSecuencia(n, 470f, 258f, 1, "AMBOS", 3, 1);
+        puertaBloqueo(n, 560f, 1, "TODAS", 0f);
+        gema(n, 330f, 205f);
+        gema(n, 470f, 275f);
 
-        // Sala B: tres palancas en secuencia obligatoria.
-        // Orden: primero AMBOS, luego Fuego, luego Agua. Si se rompe el orden, la secuencia reinicia.
-        plataforma(n, 760f, 90f, 110f, 18f, "METAL");
-        palancaSecuencia(n, 790f, 108f, 2, "AMBOS", 1, 1);
-        plataforma(n, 880f, 170f, 110f, 18f, "METAL");
-        palancaSecuencia(n, 910f, 188f, 2, "FUEGO", 2, 1);
-        plataforma(n, 1000f, 250f, 110f, 18f, "METAL");
-        palancaSecuencia(n, 1030f, 268f, 2, "AGUA", 3, 1);
-        puertaBloqueo(n, 1120f, 2, "TODAS", 0f);
+        // Etapa 2: placa de Fuego activa puente para cruzar pozo
+        plataforma(n, 600f, 100f, 100f, 18f, "PIEDRA");
+        boton(n, 630f, 118f, 2, "FUEGO");
+        peligroAgua(n, 720f, 30f, 120f, 14f);
+        puente(n, 720f, 30f, 120f, 16f, 2);
+        plataforma(n, 860f, 100f, 100f, 18f, "PIEDRA");
+        palanca(n, 890f, 118f, 3, "AGUA"); // abre siguiente puerta
+        gema(n, 780f, 70f);
 
-        // Sala C: una caja (ligera) mantiene la última placa y abre la salida.
-        caja(n, 1160f, 30f, false);
-        boton(n, 1260f, 30f, 3, "AMBOS");
-        puertaBloqueo(n, 1320f, 3, "ALGUNA", 0f);
-
-        // Peligras elementales distribuidas en las tres salas.
-        peligroAgua(n, 160f, 30f, 50f, 14f);
-        peligroLava(n, 470f, 30f, 40f, 14f);
-        peligroAgua(n, 720f, 30f, 40f, 14f);
-
-        // Gemas en alturas variadas, algunas en zonas de difícil acceso.
-        gema(n, 180f, 140f);
-        gema(n, 300f, 170f);
-        gema(n, 820f, 140f);
-        gema(n, 940f, 220f);
-        gema(n, 1060f, 300f);
-        gemaSecreta(n, 1060f, 330f);
-        gema(n, 1200f, 70f);
-
-        // Secuencia estricta: las tres palancas deben activarse en el orden correcto (1→2→3).
-        // Si un personaje activa una palanca fuera de orden, la secuencia se reinicia.
-        // Requiere coordinación: un personaje puede necesitar sostener una posición mientras el otro avanza.
+        // Etapa 3: movil y placas simultaneas
+        puertaBloqueo(n, 980f, 3, "ALGUNA", 0f);
+        movil(n, 1000f, 90f, 110f, 18f, 1140f, 90f, 95f, 0);
+        plataforma(n, 1160f, 160f, 110f, 18f, "MADERA");
+        plataforma(n, 1160f, 240f, 110f, 18f, "MADERA");
+        boton(n, 1185f, 178f, 4, "FUEGO");
+        boton(n, 1185f, 258f, 4, "AGUA");
+        puertaBloqueo(n, 1300f, 4, "TODAS", 0f);
+        peligroLava(n, 1040f, 30f, 90f, 14f);
+        gema(n, 1185f, 295f);
+        gemaSecreta(n, 1080f, 125f);
 
         return n;
     }
 
-    /** Nivel 8 - Desafío final: combinación de todas las mecánicas con cooperación avanzada. */
+    // =========================================================
+    // NIVEL 8 - Final: combina todas las mecanicas, coordinacion avanzada
+    // Varias etapas encadenadas: caja pesada, secuencia, movil, placas dobles.
+    // =========================================================
     private static Nivel nivel8() {
-        Nivel n = baseConHuecos("El santuario final", "FINAL",
-            "Cuatro salas conectadas. Coordinen cada mecanismo y lleguen juntos al santuario.", 1700f,
-            540f, 760f);
-        n.origenFuegoX = 55f; n.origenFuegoY = 30f;
-        n.origenAguaX = 100f; n.origenAguaY = 30f;
+        Nivel n = base("Santuario de los elementos", "FINAL",
+            "Etapas encadenadas: empujen, activen en orden y coordinen cada paso hasta el final.", 1700f);
+
+        n.origenFuegoX = 40f; n.origenFuegoY = 30f;
+        n.origenAguaX  = 85f; n.origenAguaY  = 30f;
         n.salidaFuego.set(1560f, 30f, 60f, 80f);
-        n.salidaAgua.set(1620f, 30f, 60f, 80f);
+        n.salidaAgua.set(1625f, 30f, 60f, 80f);
 
-        // Sala 1: dos placas elementales simultáneas al inicio.
-        // Deben pisarse juntas para que la puerta TODAS (7s) se abra.
-        boton(n, 200f, 30f, 1, "FUEGO");
-        boton(n, 340f, 30f, 1, "AGUA");
-        puertaBloqueo(n, 460f, 1, "TODAS", 7f);
-        peligroLava(n, 500f, 30f, 30f, 14f);
+        // Etapa 1: caja pesada abre primer paso
+        caja(n, 180f, 30f, true);
+        boton(n, 320f, 30f, 1, "AMBOS");
+        puertaBloqueo(n, 400f, 1, "ALGUNA", 0f);
+        plataforma(n, 140f, 100f, 100f, 18f, "MADERA");
+        gema(n, 160f, 135f);
 
-        // Sala 2: abismo crossed por una plataforma móvil de lado a lado.
-        // La plataforma se mueve de x=560 a x=680, ancho 110, velocidad 85.
-        movil(n, 560f, 110f, 110f, 18f, 680f, 110f, 85f, 0);
-        peligroAgua(n, 780f, 30f, 40f, 14f);
+        // Etapa 2: rutas separadas con palancas cruzadas
+        plataforma(n, 440f, 100f, 120f, 18f, "PIEDRA");
+        plataforma(n, 440f, 200f, 120f, 18f, "MADERA");
+        palanca(n, 480f, 218f, 2, "FUEGO");
+        plataforma(n, 600f, 100f, 120f, 18f, "PIEDRA");
+        plataforma(n, 600f, 200f, 120f, 18f, "MADERA");
+        palanca(n, 640f, 218f, 3, "AGUA");
+        puertaBloqueo(n, 560f, 3, "ALGUNA", 0f); // Fuego necesita que Agua abra
+        puertaBloqueo(n, 740f, 2, "ALGUNA", 0f); // Agua necesita que Fuego abra
+        peligroLava(n, 500f, 30f, 50f, 14f);
+        peligroAgua(n, 660f, 30f, 50f, 14f);
+        gema(n, 480f, 135f);
+        gema(n, 640f, 135f);
 
-        // Sala 3: secuencia de tres palancas con orden obligatorio.
-        // Igual que en el nivel 7: AMBOS (1), Fuego (2), Agua (3).
-        // Si el orden se rompe, la secuencia se reinicia y las puertas se cierran.
-        plataforma(n, 800f, 90f, 110f, 18f, "PIEDRA");
-        palancaSecuencia(n, 830f, 108f, 2, "AMBOS", 1, 1);
-        plataforma(n, 920f, 170f, 110f, 18f, "PIEDRA");
-        palancaSecuencia(n, 950f, 188f, 2, "FUEGO", 2, 1);
-        plataforma(n, 1040f, 250f, 110f, 18f, "PIEDRA");
-        palancaSecuencia(n, 1070f, 268f, 2, "AGUA", 3, 1);
-        plataforma(n, 1090f, 330f, 90f, 18f, "MADERA");
-        puertaBloqueo(n, 1200f, 2, "TODAS", 0f);
+        // Etapa 3: secuencia obligatoria
+        plataforma(n, 780f, 100f, 110f, 18f, "MADERA");
+        plataforma(n, 920f, 170f, 110f, 18f, "MADERA");
+        plataforma(n, 1060f, 240f, 110f, 18f, "MADERA");
+        palancaSecuencia(n, 810f, 118f, 4, "AMBOS", 1, 1);
+        palancaSecuencia(n, 950f, 188f, 4, "FUEGO", 2, 1);
+        palancaSecuencia(n, 1090f, 258f, 4, "AGUA", 3, 1);
+        puertaBloqueo(n, 1180f, 4, "TODAS", 0f);
+        gema(n, 950f, 205f);
+        gema(n, 1090f, 275f);
 
-        // Sala 4: caja pesada y placa final.
-        // La caja pesada debe empujarse hasta la placa final, luego activar la palanca AMBOS.
-        caja(n, 1320f, 30f, true);
-        boton(n, 1430f, 30f, 3, "AMBOS");
-        puertaBloqueo(n, 1500f, 3, "ALGUNA", 0f);
-
-        // Gemas finales, algunas en zonas de difícil acceso tras los mecanismos.
-        gema(n, 250f, 130f);
-        gema(n, 610f, 170f);
-        gema(n, 860f, 140f);
-        gema(n, 980f, 220f);
-        gema(n, 1100f, 300f);
-        gemaSecreta(n, 1120f, 360f);
-        gema(n, 1360f, 80f);
-
-        // El nivel 8 es el gran desafío: combina todo lo aprendido en los niveles anteriores.
-        // Requiere:
-        // - Activación simultánea de placas en la Sala 1.
-        // - Timing preciso con la plataforma móvil en la Sala 2.
-        // - Secuencia perfecta de tres palancas en la Sala 3.
-        // - Empuje de caja pesada y placa final en la Sala 4.
-        // - Coordinación constante entre ambos personajes para no fallar en ningun paso.
-        // - No es posible saltear ningun paso: cada mecanismo es necesario para llegar a la salida.
+        // Etapa 4: plataforma movil + placas simultaneas finales
+        movil(n, 1200f, 120f, 110f, 18f, 1320f, 220f, 90f, 0);
+        plataforma(n, 1340f, 220f, 120f, 18f, "PIEDRA");
+        plataforma(n, 1340f, 120f, 120f, 18f, "PIEDRA");
+        boton(n, 1360f, 138f, 5, "FUEGO");
+        boton(n, 1380f, 238f, 5, "AGUA");
+        puertaBloqueo(n, 1500f, 5, "TODAS", 0f);
+        peligroLava(n, 1240f, 30f, 60f, 14f);
+        peligroAgua(n, 1440f, 30f, 50f, 14f);
+        gemaSecreta(n, 1380f, 275f);
 
         return n;
     }
@@ -414,27 +464,6 @@ public final class NivelesIntegrados {
         n.ancho = ancho;
         n.alto = Configuracion.ALTO_MUNDO;
         suelo(n, 0f, ancho);
-        bordes(n);
-        return n;
-    }
-
-    /** Crea un nivel con el piso cortado en varios huecos (para abismos). */
-    private static Nivel baseConHuecos(String nombre, String tema, String pista, float ancho, float... cortes) {
-        Nivel n = new Nivel();
-        n.nombre = nombre;
-        n.tema = tema;
-        n.pista = pista;
-        n.ancho = ancho;
-        n.alto = Configuracion.ALTO_MUNDO;
-
-        float inicio = 0f;
-        for (int i = 0; i + 1 < cortes.length; i += 2) {
-            float desde = cortes[i];
-            float hasta = cortes[i + 1];
-            if (desde > inicio) suelo(n, inicio, desde - inicio);
-            inicio = hasta;
-        }
-        if (inicio < ancho) suelo(n, inicio, ancho - inicio);
         bordes(n);
         return n;
     }

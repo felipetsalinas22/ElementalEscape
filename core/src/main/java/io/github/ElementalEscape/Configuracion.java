@@ -44,6 +44,15 @@ public final class Configuracion {
     public static final float ALTO_MAXIMO_NIVEL = 900f;
     public static final float PASO_EDITOR = 10f;
 
+    /**
+     * Margen superior reservado para el HUD en pantalla. Ningun objeto jugable
+     * importante (plataforma alcanzable, gema, mecanismo, puerta, salida, origen)
+     * debe colocarse dentro de esta franja.
+     */
+    public static final float MARGEN_HUD_SUPERIOR = 76f;
+    /** Margen inferior para textos/pistas del HUD. */
+    public static final float MARGEN_HUD_INFERIOR = 48f;
+
     // Medidas fijas de los objetos del editor. No se editan desde la interfaz:
     // el editor coloca siempre objetos de estos tamanos y el JSON los normaliza.
     public static final float ANCHO_PLATAFORMA_EDITOR = 140f;

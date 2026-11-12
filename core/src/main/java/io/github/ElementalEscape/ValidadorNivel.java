@@ -134,39 +134,47 @@ public final class ValidadorNivel {
         boolean[] desdeFuego = recorrer(superficies, fuego);
         boolean[] desdeAgua = recorrer(superficies, agua);
 
-        comprobarDestino(problemas, superficies, desdeFuego, desdeAgua,
+        // Cada personaje debe poder llegar a SU salida. No basta con que una
+        // de las dos salidas sea alcanzable por cualquiera de los dos.
+        comprobarDestino(problemas, superficies, desdeFuego,
             n.salidaFuego, "La salida de Fuego no es alcanzable desde su origen.");
-        comprobarDestino(problemas, superficies, desdeFuego, desdeAgua,
+        comprobarDestino(problemas, superficies, desdeAgua,
             n.salidaAgua, "La salida de Agua no es alcanzable desde su origen.");
 
         for (Nivel.Boton b : n.botones) {
             comprobarControl(problemas, superficies, desdeFuego, desdeAgua,
-                b.rect, "Una placa");
+                b.rect, b.elemento, "Una placa");
         }
         for (Nivel.Palanca p : n.palancas) {
             comprobarControl(problemas, superficies, desdeFuego, desdeAgua,
-                p.rect, "Una palanca");
+                p.rect, p.elemento, "Una palanca");
         }
         return problemas;
     }
 
     private static void comprobarDestino(List<String> problemas, List<Superficie> superficies,
-                                         boolean[] desdeFuego, boolean[] desdeAgua,
+                                         boolean[] desdeOrigen,
                                          Rectangle destino, String mensaje) {
         int indice = superficieBajo(superficies, destino.x + destino.width / 2f, destino.y);
         if (indice < 0) {
             problemas.add(mensaje + " (no hay piso debajo).");
-        } else if (!desdeFuego[indice] && !desdeAgua[indice]) {
+        } else if (!desdeOrigen[indice]) {
             problemas.add(mensaje);
         }
     }
 
     private static void comprobarControl(List<String> problemas, List<Superficie> superficies,
                                          boolean[] desdeFuego, boolean[] desdeAgua,
-                                         Rectangle control, String tipo) {
+                                         Rectangle control, String elemento, String tipo) {
         int indice = superficieBajo(superficies, control.x + control.width / 2f, control.y);
         if (indice < 0) {
             problemas.add(tipo + " no tiene una superficie pisable debajo.");
+            return;
+        }
+        if ("FUEGO".equalsIgnoreCase(elemento)) {
+            if (!desdeFuego[indice]) problemas.add(tipo + " de Fuego quedo aislada.");
+        } else if ("AGUA".equalsIgnoreCase(elemento)) {
+            if (!desdeAgua[indice]) problemas.add(tipo + " de Agua quedo aislada.");
         } else if (!desdeFuego[indice] && !desdeAgua[indice]) {
             problemas.add(tipo + " quedo aislada del recorrido.");
         }
@@ -175,27 +183,63 @@ public final class ValidadorNivel {
     private static List<Superficie> superficies(Nivel n) {
         List<Superficie> lista = new ArrayList<>();
         for (Nivel.Plataforma p : n.plataformas) {
+            if (p == null || p.rect == null) continue;
             if (p.rect.width >= 8f && p.rect.height > 4f) {
-                lista.add(new Superficie(p.rect.x, p.rect.x + p.rect.width,
-                    p.rect.y + p.rect.height));
+                agregarSuperficie(n, lista, p.rect.x, p.rect.x + p.rect.width,
+                    p.rect.y + p.rect.height);
             }
         }
         for (Nivel.PlataformaMovil m : n.moviles) {
-            lista.add(new Superficie(m.rect.x, m.rect.x + m.rect.width,
-                m.rect.y + m.rect.height));
+            if (m == null || m.rect == null) continue;
+            agregarSuperficie(n, lista, m.rect.x, m.rect.x + m.rect.width,
+                m.rect.y + m.rect.height);
             float fx = m.finX;
             float fy = m.finY;
             if (Math.abs(fx - m.rect.x) > 1f || Math.abs(fy - m.rect.y) > 1f) {
-                lista.add(new Superficie(fx, fx + m.rect.width, fy + m.rect.height));
+                agregarSuperficie(n, lista, fx, fx + m.rect.width, fy + m.rect.height);
             }
         }
         for (Nivel.Puerta p : n.puertas) {
-            if (p.puente) {
-                lista.add(new Superficie(p.rect.x, p.rect.x + p.rect.width,
-                    p.rect.y + p.rect.height));
-            }
+            if (p == null || p.rect == null || !p.puente) continue;
+            agregarSuperficie(n, lista, p.rect.x, p.rect.x + p.rect.width,
+                p.rect.y + p.rect.height);
         }
         return lista;
+    }
+
+    /**
+     * Solo agrega una superficie si el personaje cabe de pie sobre al menos una
+     * parte de ella. Sin esto, el techo y la cara superior de los muros del
+     * recinto se tomaban como plataformas y conectaban zonas inaccesibles.
+     */
+    private static void agregarSuperficie(Nivel n, List<Superficie> lista,
+                                          float x1, float x2, float y) {
+        if (!tieneEspacioParaPararse(n, x1, x2, y)) return;
+        lista.add(new Superficie(x1, x2, y));
+    }
+
+    private static boolean tieneEspacioParaPararse(Nivel n, float x1, float x2, float y) {
+        if (y + Configuracion.ALTO_PERSONAJE > n.alto + 1f) return false;
+        float medio = Configuracion.ANCHO_PERSONAJE * 0.5f;
+        float desde = x1 + medio;
+        float hasta = x2 - medio;
+        if (hasta < desde) desde = hasta = (x1 + x2) * 0.5f;
+        for (float x = desde; x < hasta; x += 30f) {
+            if (libreArriba(n, x, y)) return true;
+        }
+        return libreArriba(n, hasta, y);
+    }
+
+    private static boolean libreArriba(Nivel n, float x, float y) {
+        Rectangle cabeza = new Rectangle(
+            x - Configuracion.ANCHO_PERSONAJE * 0.5f,
+            y + 0.5f,
+            Configuracion.ANCHO_PERSONAJE,
+            Configuracion.ALTO_PERSONAJE);
+        for (Nivel.Plataforma p : n.plataformas) {
+            if (p != null && p.rect != null && p.rect.overlaps(cabeza)) return false;
+        }
+        return true;
     }
 
     private static boolean[] recorrer(List<Superficie> superficies, int inicio) {

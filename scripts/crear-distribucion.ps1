@@ -48,7 +48,7 @@ $icono = Join-Path $raiz "lwjgl3\icons\logo.ico"
 $argumentos = @(
     "--type", "app-image",
     "--name", "Elemental Escape",
-    "--app-version", "1.2.0",
+    "--app-version", "1.3.0",
     "--vendor", "Elemental Escape",
     "--description", "Aventura cooperativa de plataformas para dos jugadores",
     "--input", $stage,

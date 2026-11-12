@@ -77,14 +77,15 @@ public class PantallaNiveles extends PantallaBase {
     private void dibujarCampana() {
         Progreso progreso = juego.getProgreso();
         int completados = progreso.nivelesCompletados();
-        float ancho = 172f;
+        float ancho = 200f;
         float alto = 150f;
-        float inicioX = 24f;
+        float separacion = 16f;
+        float inicioX = (960f - (4f * ancho + 3f * separacion)) / 2f;
 
         for (int i = 0; i < Configuracion.TOTAL_NIVELES; i++) {
-            int columna = i % 5;
-            int fila = i / 5;
-            float x = inicioX + columna * (ancho + 12f);
+            int columna = i % 4;
+            int fila = i / 4;
+            float x = inicioX + columna * (ancho + separacion);
             float y = fila == 0 ? 260f : 98f;
             boolean desbloqueado = i <= completados;
             boolean completado = progreso.estaCompletado(i);
@@ -125,7 +126,7 @@ public class PantallaNiveles extends PantallaBase {
             } else if (desbloqueado) {
                 Dibujo.texto(lote, fuente, "Disponible", x + 10f, y + 42f, Configuracion.DORADO, 0.66f);
             } else {
-                Dibujo.texto(lote, fuente, "Completa el nivel " + completados, x + 10f, y + 42f,
+                Dibujo.texto(lote, fuente, "Completa el nivel " + i, x + 10f, y + 42f,
                     new Color(0.50f, 0.54f, 0.64f, 1f), 0.55f);
             }
 

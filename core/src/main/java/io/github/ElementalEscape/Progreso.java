@@ -115,7 +115,7 @@ public class Progreso {
     private void evaluarLogros() {
         int completados = nivelesCompletados();
         if (completados >= 1) agregarLogro("Primer paso");
-        if (completados >= 10) agregarLogro("Maestria elemental");
+        if (completados >= Configuracion.TOTAL_NIVELES) agregarLogro("Maestria elemental");
         for (Puntuacion.ResultadoNivel r : niveles) {
             if (!r.completado) continue;
             if (r.todasGemas) agregarLogro("Coleccionista");

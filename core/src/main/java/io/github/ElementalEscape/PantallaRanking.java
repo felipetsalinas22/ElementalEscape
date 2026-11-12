@@ -27,7 +27,7 @@ public class PantallaRanking extends PantallaBase {
         lote.begin();
         fondoEstrellado(tiempo, new Color(0.025f, 0.035f, 0.075f, 1f),
             new Color(0.12f, 0.07f, 0.18f, 1f));
-        tituloPantalla("RANKING DE LA CAMPANA", "Puntos de cada jugador en los diez niveles", Configuracion.DORADO);
+        tituloPantalla("RANKING DE LA CAMPANA", "Puntos de cada jugador en los ocho niveles", Configuracion.DORADO);
 
         Progreso progreso = juego.getProgreso();
         int fuego = progreso.puntosTotales(Jugador.Tipo.FUEGO);

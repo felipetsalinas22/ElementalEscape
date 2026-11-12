@@ -90,7 +90,7 @@ public class GestorNiveles {
                 throw new IOException("El archivo esta vacio.");
             Nivel nivel = json.fromJson(Nivel.class, texto);
             if (nivel == null) throw new IOException("El JSON no contiene un nivel.");
-            nivel.normalizar();
+            nivel.normalizarEditor();
             return nivel;
         } catch (IOException e) {
             throw e;
@@ -103,10 +103,11 @@ public class GestorNiveles {
      * Guarda un nivel. Si ya existe otro con el mismo nombre solo sobrescribe
      * cuando permitirSobrescribir es true.
      */
-    public void guardar(Nivel nivel, boolean permitirSobrescribir) throws IOException {
+    public String guardar(Nivel nivel, boolean permitirSobrescribir) throws IOException {
         if (nivel == null) throw new IOException("No hay nivel para guardar.");
-        nivel.normalizar();
-        if (nivel.nombre.trim().isEmpty()) throw new IOException("El nivel necesita un nombre.");
+        nivel.normalizarEditor();
+        if (nivel.nombre == null || nivel.nombre.trim().isEmpty())
+            throw new IOException("El nivel necesita un nombre.");
         asegurarCarpeta();
 
         FileHandle destino = archivoPara(nivel.nombre);
@@ -128,6 +129,27 @@ public class GestorNiveles {
 
         String texto = json.prettyPrint(nivel);
         destino.writeString(texto, false, "UTF-8");
+        return destino.name();
+    }
+
+    /**
+     * Actualiza un archivo ya cargado sin crear copias.
+     * El nombre interno puede cambiar, pero el archivo conserva su identidad.
+     */
+    public String guardarEn(Nivel nivel, String nombreArchivo) throws IOException {
+        if (nivel == null) throw new IOException("No hay nivel para guardar.");
+        if (nombreArchivo == null || nombreArchivo.trim().isEmpty())
+            throw new IOException("El nivel todavia no tiene archivo.");
+        if (nombreArchivo.indexOf('/') >= 0 || nombreArchivo.indexOf('\\') >= 0)
+            throw new IOException("Nombre de archivo invalido.");
+        nivel.normalizarEditor();
+        if (nivel.nombre == null || nivel.nombre.trim().isEmpty())
+            throw new IOException("El nivel necesita un nombre.");
+        asegurarCarpeta();
+        FileHandle destino = carpeta.child(nombreArchivo);
+        if (destino.isDirectory()) throw new IOException("Ese nombre corresponde a una carpeta.");
+        destino.writeString(json.prettyPrint(nivel), false, "UTF-8");
+        return destino.name();
     }
 
     public void eliminar(String nombreArchivo) throws IOException {
@@ -138,15 +160,31 @@ public class GestorNiveles {
     }
 
     public Nivel duplicar(String nombreArchivo, String nuevoNombre) throws IOException {
+        return duplicarNivel(cargar(nombreArchivo), nuevoNombre);
+    }
+
+    /** Duplica el nivel que esta en memoria, aunque tenga cambios sin guardar. */
+    public Nivel duplicarNivel(Nivel original, String nuevoNombre) throws IOException {
+        if (original == null) throw new IOException("No hay nivel para duplicar.");
         if (nuevoNombre == null || nuevoNombre.trim().isEmpty())
             throw new IOException("El nombre de la copia no puede estar vacio.");
-        Nivel original = cargar(nombreArchivo);
+        if (existeNombre(nuevoNombre))
+            throw new IOException("Ya existe un nivel llamado \"" + nuevoNombre.trim() + "\".");
         Nivel copia = json.fromJson(Nivel.class, json.toJson(original));
         if (copia == null) throw new IOException("No se pudo copiar el nivel.");
         copia.nombre = nuevoNombre.trim();
-        copia.normalizar();
+        copia.normalizarEditor();
         guardar(copia, false);
         return copia;
+    }
+
+    /** Devuelve el archivo real que contiene ese nombre, o "" si no existe. */
+    public String archivoConNombre(String nombre) {
+        if (nombre == null) return "";
+        for (Entrada e : listar()) {
+            if (e.nivel != null && nombresIguales(e.nivel.nombre, nombre)) return e.archivo;
+        }
+        return "";
     }
 
     public boolean existeNombre(String nombre) {

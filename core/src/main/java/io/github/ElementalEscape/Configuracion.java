@@ -44,6 +44,33 @@ public final class Configuracion {
     public static final float ALTO_MAXIMO_NIVEL = 900f;
     public static final float PASO_EDITOR = 10f;
 
+    // Medidas fijas de los objetos del editor. No se editan desde la interfaz:
+    // el editor coloca siempre objetos de estos tamanos y el JSON los normaliza.
+    public static final float ANCHO_PLATAFORMA_EDITOR = 140f;
+    public static final float ALTO_PLATAFORMA_EDITOR = 20f;
+    public static final float ANCHO_MURO_EDITOR = 24f;
+    public static final float ALTO_MURO_EDITOR = 180f;
+    public static final float ANCHO_PELIGRO_EDITOR = 100f;
+    public static final float ALTO_PELIGRO_EDITOR = 14f;
+    public static final float ANCHO_PUERTA_EDITOR = 20f;
+    public static final float ALTO_PUERTA_EDITOR = 250f;
+    public static final float ANCHO_PUENTE_EDITOR = 160f;
+    public static final float ALTO_PUENTE_EDITOR = 16f;
+    public static final float ANCHO_MOVIL_EDITOR = 110f;
+    public static final float ALTO_MOVIL_EDITOR = 18f;
+    public static final float ANCHO_GEMA_EDITOR = 22f;
+    public static final float ALTO_GEMA_EDITOR = 22f;
+    public static final float ANCHO_BOTON_EDITOR = 56f;
+    public static final float ALTO_BOTON_EDITOR = 12f;
+    public static final float ANCHO_PALANCA_EDITOR = 28f;
+    public static final float ALTO_PALANCA_EDITOR = 44f;
+    public static final float ANCHO_CAJA_EDITOR = 40f;
+    public static final float ALTO_CAJA_EDITOR = 40f;
+    public static final float ANCHO_SALIDA_EDITOR = 60f;
+    public static final float ALTO_SALIDA_EDITOR = 80f;
+    public static final float ANCHO_ORIGEN_EDITOR = 30f;
+    public static final float ALTO_ORIGEN_EDITOR = 46f;
+
     // ---------------- Puntuacion ----------------
     public static final int PUNTOS_COLECCIONABLE = 100;
     public static final int PUNTOS_MECANISMO = 25;
@@ -54,7 +81,7 @@ public final class Configuracion {
     public static final float TIEMPO_LIMITE_NIVEL = 180f;
     public static final float SEGUNDOS_PUNTOS_TIEMPO = 2f;
     public static final int VIDAS_INICIALES = 3;
-    public static final int TOTAL_NIVELES = 10;
+    public static final int TOTAL_NIVELES = 8;
 
     public static final float TIEMPO_SALIDA = 1.2f;
     public static final float TIEMPO_REAPARICION = 1.0f;

@@ -113,7 +113,7 @@ public class MenuPrincipal extends PantallaBase {
         Dibujo.linea(lote, 510f, 452f, 630f, 452f, 2f,
             new Color(0.36f, 0.78f, 1f, 0.72f));
         Dibujo.circulo(lote, 480f, 452f, 8f, new Color(1f, 0.84f, 0.40f, 0.90f));
-        Dibujo.textoCentrado(lote, fuente, "COOPERATIVO PARA DOS JUGADORES", 480f, 430f,
+        Dibujo.textoCentrado(lote, fuente, "COOPERATIVO PARA DOS JUGADORES", 480f, 438f,
             new Color(0.74f, 0.84f, 1f, alpha), 0.72f);
 
         // Los dos personajes en pose de presentacion. Quedan por encima de los
@@ -125,36 +125,42 @@ public class MenuPrincipal extends PantallaBase {
     }
 
     private void dibujarBotones() {
-        float xIzq = 64f;
-        float xDer = 496f;
-        float ancho = 400f;
-        float alto = 48f;
+        // Una sola columna centrada: el mismo rectangulo se usa para dibujar y
+        // para detectar el clic, por lo que no hay desfases al redimensionar.
+        final float centroX = 480f;
+        final float ancho = 360f;
+        final float alto = 38f;
+        final float separacion = 5f;
+        final float x = centroX - ancho / 2f;
+        final float inicioY = 352f;
 
-        // Columna izquierda: flujo principal del juego.
-        if (ui.boton("CONTINUAR CAMPANA", xIzq, 338f, ancho, alto)) continuarCampana();
-        if (ui.boton("SELECCION DE NIVELES", xIzq, 280f, ancho, alto))
-            cambiarPantalla(new PantallaNiveles(juego));
-        if (ui.boton("MULTIJUGADOR EN LINEA", xIzq, 222f, ancho, alto))
-            cambiarPantalla(new PantallaOnline(juego));
-        if (ui.boton("EDITOR DE NIVELES", xIzq, 164f, ancho, alto))
-            cambiarPantalla(new PantallaEditor(juego, null));
-
-        // Columna derecha: consulta y configuracion.
-        if (ui.boton("RANKING Y PROGRESO", xDer, 338f, ancho, alto))
-            cambiarPantalla(new PantallaRanking(juego));
-        if (ui.boton("AJUSTES", xDer, 280f, ancho, alto))
-            cambiarPantalla(new PantallaAjustes(juego));
-        if (ui.boton("SALIR", xDer, 222f, ancho, alto))
-            salirAplicacion();
-
-        // Teclas rapidas visibles, sin tapar el texto de los botones.
-        dibujarTecla("1", xIzq + 16f, 350f);
-        dibujarTecla("2", xIzq + 16f, 292f);
-        dibujarTecla("3", xIzq + 16f, 234f);
-        dibujarTecla("4", xIzq + 16f, 176f);
-        dibujarTecla("5", xDer + 16f, 350f);
-        dibujarTecla("6", xDer + 16f, 292f);
-        dibujarTecla("7", xDer + 16f, 234f);
+        String[] etiquetas = {
+            "CONTINUAR CAMPANA",
+            "SELECCION DE NIVELES",
+            "MULTIJUGADOR EN LINEA",
+            "EDITOR DE NIVELES",
+            "RANKING Y PROGRESO",
+            "AJUSTES",
+            "SALIR"
+        };
+        for (int i = 0; i < etiquetas.length; i++) {
+            float y = inicioY - i * (alto + separacion);
+            boolean pulsado = ui.boton(etiquetas[i], x, y, ancho, alto);
+            dibujarTecla(String.valueOf(i + 1), x + 12f, y + (alto - 24f) / 2f);
+            if (pulsado) {
+                switch (i) {
+                    case 0: continuarCampana(); break;
+                    case 1: cambiarPantalla(new PantallaNiveles(juego)); break;
+                    case 2: cambiarPantalla(new PantallaOnline(juego)); break;
+                    case 3: cambiarPantalla(new PantallaEditor(juego, null)); break;
+                    case 4: cambiarPantalla(new PantallaRanking(juego)); break;
+                    case 5: cambiarPantalla(new PantallaAjustes(juego)); break;
+                    case 6: salirAplicacion(); break;
+                    default: break;
+                }
+                return;
+            }
+        }
     }
 
     private void dibujarTecla(String texto, float x, float y) {
@@ -169,21 +175,17 @@ public class MenuPrincipal extends PantallaBase {
         int completados = progreso.nivelesCompletados();
         int fuego = progreso.puntosTotales(Jugador.Tipo.FUEGO);
         int agua = progreso.puntosTotales(Jugador.Tipo.AGUA);
-        int ganadorFinal = progreso.ganadorFinal();
-        String ganador = ganadorFinal == 0 ? "EMPATE" : (ganadorFinal == 1 ? "GANA FUEGO" : "GANA AGUA");
 
-        Dibujo.panel(lote, 496f, 114f, 400f, 94f, new Color(0.045f, 0.065f, 0.115f, 0.92f),
+        Dibujo.panel(lote, 300f, 396f, 360f, 34f,
+            new Color(0.045f, 0.065f, 0.115f, 0.94f),
             new Color(0.28f, 0.39f, 0.58f, 0.95f));
-        Dibujo.rectangulo(lote, 496f, 114f, 3f, 94f, Configuracion.DORADO);
-        ui.texto("PROGRESO DE LA CAMPANA", 516f, 190f, Configuracion.TEXTO_SUAVE, 0.66f);
-        ui.barra(516f, 170f, 360f, 8f,
+        Dibujo.rectangulo(lote, 300f, 396f, 3f, 34f, Configuracion.DORADO);
+        ui.texto(completados + " / " + Configuracion.TOTAL_NIVELES + " completados",
+            312f, 421f, Configuracion.TEXTO, 0.62f);
+        ui.barra(410f, 406f, 120f, 6f,
             completados / (float) Configuracion.TOTAL_NIVELES, Configuracion.DORADO);
-        ui.texto(completados + " / " + Configuracion.TOTAL_NIVELES + " niveles completados",
-            516f, 148f, Configuracion.TEXTO, 0.72f);
-        ui.texto("Fuego " + fuego, 516f, 126f, Configuracion.FUEGO_CLARO, 0.72f);
-        ui.texto("Agua " + agua, 638f, 126f, Configuracion.AGUA_CLARA, 0.72f);
-        ui.textoDerecha(ganador, 878f, 126f,
-            ganadorFinal == 0 ? Configuracion.DORADO : Configuracion.TEXTO, 0.66f);
+        ui.textoDerecha("Fuego " + fuego + "   Agua " + agua, 648f, 421f,
+            Configuracion.TEXTO_SUAVE, 0.60f);
     }
 
     private void dibujarPie() {

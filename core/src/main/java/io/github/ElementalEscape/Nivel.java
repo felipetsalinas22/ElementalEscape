@@ -47,6 +47,8 @@ public class Nivel {
     public static class Plataforma {
         public Rectangle rect = new Rectangle();
         public String estilo = "PIEDRA";
+        /** Los bordes automaticos del escenario conservan su tamano completo. */
+        public boolean limite = false;
 
         public Plataforma() { }
 
@@ -204,6 +206,104 @@ public class Nivel {
     private static float limitar(float valor, float minimo, float maximo) {
         if (Float.isNaN(valor) || Float.isInfinite(valor)) return minimo;
         return Math.max(minimo, Math.min(maximo, valor));
+    }
+
+    /**
+     * Normaliza un nivel personalizado con las medidas fijas del editor.
+     * Los bordes automaticos del escenario son la unica excepcion: conservan
+     * el ancho/alto del nivel para que el recinto siga cerrado.
+     *
+     * Las medidas no se editan desde la interfaz; esta funcion las aplica al
+     * cargar y al guardar para que el JSON tambien quede siempre normalizado.
+     */
+    public void normalizarEditor() {
+        normalizar();
+
+        for (Plataforma p : plataformas) {
+            if (p == null || p.rect == null) continue;
+            if (p.limite || esBorde(p)) {
+                p.limite = true;
+                limitarRect(p.rect);
+                continue;
+            }
+            if ("MURO".equalsIgnoreCase(p.estilo)) {
+                p.rect.setSize(Configuracion.ANCHO_MURO_EDITOR, Configuracion.ALTO_MURO_EDITOR);
+            } else {
+                p.rect.setSize(Configuracion.ANCHO_PLATAFORMA_EDITOR, Configuracion.ALTO_PLATAFORMA_EDITOR);
+            }
+            limitarRect(p.rect);
+        }
+        for (Peligro p : peligros) {
+            if (p == null || p.rect == null) continue;
+            p.rect.setSize(Configuracion.ANCHO_PELIGRO_EDITOR, Configuracion.ALTO_PELIGRO_EDITOR);
+            limitarRect(p.rect);
+        }
+        for (Gema g : gemas) {
+            if (g == null || g.rect == null) continue;
+            g.rect.setSize(Configuracion.ANCHO_GEMA_EDITOR, Configuracion.ALTO_GEMA_EDITOR);
+            limitarRect(g.rect);
+        }
+        for (Boton b : botones) {
+            if (b == null || b.rect == null) continue;
+            b.rect.setSize(Configuracion.ANCHO_BOTON_EDITOR, Configuracion.ALTO_BOTON_EDITOR);
+            limitarRect(b.rect);
+        }
+        for (Palanca p : palancas) {
+            if (p == null || p.rect == null) continue;
+            p.rect.setSize(Configuracion.ANCHO_PALANCA_EDITOR, Configuracion.ALTO_PALANCA_EDITOR);
+            limitarRect(p.rect);
+        }
+        for (Puerta p : puertas) {
+            if (p == null || p.rect == null) continue;
+            if (p.puente) {
+                p.rect.setSize(Configuracion.ANCHO_PUENTE_EDITOR, Configuracion.ALTO_PUENTE_EDITOR);
+            } else {
+                p.rect.setSize(Configuracion.ANCHO_PUERTA_EDITOR, Configuracion.ALTO_PUERTA_EDITOR);
+            }
+            limitarRect(p.rect);
+        }
+        for (PlataformaMovil m : moviles) {
+            if (m == null || m.rect == null) continue;
+            m.rect.setSize(Configuracion.ANCHO_MOVIL_EDITOR, Configuracion.ALTO_MOVIL_EDITOR);
+            limitarRect(m.rect);
+            m.finX = limitar(m.finX, 10f, Math.max(10f, ancho - 10f));
+            m.finY = limitar(m.finY, 10f, Math.max(10f, alto - 10f));
+        }
+        for (Caja c : cajas) {
+            if (c == null || c.rect == null) continue;
+            c.rect.setSize(Configuracion.ANCHO_CAJA_EDITOR, Configuracion.ALTO_CAJA_EDITOR);
+            limitarRect(c.rect);
+        }
+
+        salidaFuego.setSize(Configuracion.ANCHO_SALIDA_EDITOR, Configuracion.ALTO_SALIDA_EDITOR);
+        salidaAgua.setSize(Configuracion.ANCHO_SALIDA_EDITOR, Configuracion.ALTO_SALIDA_EDITOR);
+        limitarRect(salidaFuego);
+        limitarRect(salidaAgua);
+        origenFuegoX = limitar(origenFuegoX, 0f, Math.max(0f, ancho - Configuracion.ANCHO_ORIGEN_EDITOR));
+        origenFuegoY = limitar(origenFuegoY, 0f, Math.max(0f, alto - Configuracion.ALTO_ORIGEN_EDITOR));
+        origenAguaX = limitar(origenAguaX, 0f, Math.max(0f, ancho - Configuracion.ANCHO_ORIGEN_EDITOR));
+        origenAguaY = limitar(origenAguaY, 0f, Math.max(0f, alto - Configuracion.ALTO_ORIGEN_EDITOR));
+    }
+
+    private void limitarRect(Rectangle r) {
+        r.width = Math.max(1f, r.width);
+        r.height = Math.max(1f, r.height);
+        r.x = Math.max(0f, Math.min(r.x, Math.max(0f, ancho - r.width)));
+        r.y = Math.max(0f, Math.min(r.y, Math.max(0f, alto - r.height)));
+    }
+
+    private boolean esBorde(Plataforma p) {
+        Rectangle r = p.rect;
+        float e = 0.6f;
+        boolean suelo = Math.abs(r.x) < e && Math.abs(r.y) < e
+            && Math.abs(r.width - ancho) < e && Math.abs(r.height - 30f) < e;
+        boolean izquierda = Math.abs(r.x) < e && Math.abs(r.y) < e
+            && Math.abs(r.width - 18f) < e && Math.abs(r.height - alto) < e;
+        boolean derecha = Math.abs(r.x + r.width - ancho) < e && Math.abs(r.y) < e
+            && Math.abs(r.width - 18f) < e && Math.abs(r.height - alto) < e;
+        boolean techo = Math.abs(r.x) < e && Math.abs(r.y + r.height - alto) < e
+            && Math.abs(r.width - ancho) < e && Math.abs(r.height - 16f) < e;
+        return suelo || izquierda || derecha || techo;
     }
 
     public void agregar(Plataforma objeto) { plataformas = agregar(plataformas, objeto); }

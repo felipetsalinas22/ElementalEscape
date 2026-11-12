@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import java.util.ArrayList;
@@ -52,6 +53,13 @@ public class PantallaJuego extends PantallaBase {
     private String avisoRed = "";
     private float avisoRedTiempo = 0f;
 
+    // Contexto para volver al editor sin perder archivo, cambios ni historial.
+    private Nivel nivelEditor;
+    private String archivoEditor;
+    private boolean sucioEditor;
+    private List<String> historialEditor;
+    private int posHistorialEditor;
+
     private PantallaJuego(Juego juego, Nivel nivel, int indiceNivel, boolean campana,
                           GestorRed red, Origen origen) {
         super(juego);
@@ -72,7 +80,29 @@ public class PantallaJuego extends PantallaBase {
     }
 
     public static PantallaJuego pruebaEditor(Juego juego, Nivel nivel) {
-        return new PantallaJuego(juego, nivel, 0, false, GestorRed.local(), Origen.EDITOR);
+        return pruebaEditor(juego, nivel, "", false, null, -1);
+    }
+
+    public static PantallaJuego pruebaEditor(Juego juego, Nivel nivel, String archivo,
+                                             boolean sucio, List<String> historial, int posHistorial) {
+        // La partida recibe una copia: mover cajas o plataformas durante la
+        // prueba no debe modificar el diseno que sigue abierto en el editor.
+        Nivel copia = copiarNivel(nivel);
+        PantallaJuego pantalla = new PantallaJuego(juego, copia, 0, false,
+            GestorRed.local(), Origen.EDITOR);
+        pantalla.nivelEditor = nivel;
+        pantalla.archivoEditor = archivo;
+        pantalla.sucioEditor = sucio;
+        pantalla.historialEditor = historial == null ? null : new ArrayList<>(historial);
+        pantalla.posHistorialEditor = posHistorial;
+        return pantalla;
+    }
+
+    private static Nivel copiarNivel(Nivel original) {
+        if (original == null) return null;
+        Json json = new Json();
+        Nivel copia = json.fromJson(Nivel.class, json.toJson(original));
+        return copia != null ? copia : original;
     }
 
     public static PantallaJuego online(Juego juego, GestorRed red, Nivel nivel,
@@ -415,7 +445,9 @@ public class PantallaJuego extends PantallaBase {
         if (red.esAnfitrion()) red.enviarComando("VOLVER");
         red.cerrar();
         if (origen == Origen.EDITOR) {
-            cambiarPantalla(new PantallaEditor(juego, nivel));
+            cambiarPantalla(PantallaEditor.desdePrueba(juego,
+                nivelEditor != null ? nivelEditor : nivel, archivoEditor,
+                sucioEditor, historialEditor, posHistorialEditor));
         } else if (origen == Origen.NIVELES) {
             cambiarPantalla(new PantallaNiveles(juego));
         } else if (origen == Origen.ONLINE) {
@@ -536,7 +568,8 @@ public class PantallaJuego extends PantallaBase {
         if (ui.boton("CONTINUAR", 320f, 282f, 320f, 42f)) accionPausa();
         if (ui.boton("REINICIAR NIVEL", 320f, 232f, 320f, 42f)) accionReiniciar();
         if (ui.boton("AJUSTES", 320f, 182f, 320f, 42f)) cambiarPantalla(new PantallaAjustes(juego));
-        if (ui.boton("VOLVER AL MENU", 320f, 132f, 320f, 42f)) accionSalir();
+        String volver = origen == Origen.EDITOR ? "VOLVER AL EDITOR" : "VOLVER AL MENU";
+        if (ui.boton(volver, 320f, 132f, 320f, 42f)) accionSalir();
         Dibujo.textoCentrado(lote, fuente, "ESC para continuar", 480f, 112f,
             Configuracion.TEXTO_SUAVE, 0.58f);
     }
@@ -592,7 +625,9 @@ public class PantallaJuego extends PantallaBase {
             if (ui.boton("VER RANKING FINAL", 330f, 82f, 220f, 40f)) accionAvanzar();
             if (ui.boton("REPETIR", 560f, 82f, 100f, 40f)) accionReiniciar();
         }
-        if (ui.boton("MENU", 120f, 82f, 140f, 40f)) accionSalir();
+        if (origen != Origen.EDITOR) {
+            if (ui.boton("MENU", 120f, 82f, 140f, 40f)) accionSalir();
+        }
         Dibujo.textoCentrado(lote, fuente, "ENTER continua  -  R reinicia", 480f, 68f,
             Configuracion.TEXTO_SUAVE, 0.55f);
     }

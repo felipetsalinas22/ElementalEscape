@@ -45,6 +45,10 @@ public class PantallaEditor extends PantallaBase {
 
     private Nivel nivel;
     private final Nivel nivelInicial;
+    private String archivoRestaurar;
+    private boolean sucioRestaurar;
+    private List<String> historialRestaurar;
+    private int posHistorialRestaurar = -1;
     private DibujanteJuego dibujante;
     private OrthographicCamera camara;
     private Json json;
@@ -64,11 +68,6 @@ public class PantallaEditor extends PantallaBase {
     private boolean arrastrandoCamara = false;
     private boolean arrastrandoObjeto = false;
     private boolean objetoMovido = false;
-    private boolean creando = false;
-    private float crearInicioX;
-    private float crearInicioY;
-    private float crearFinX;
-    private float crearFinY;
     private float ultimoMundoX;
     private float ultimoMundoY;
 
@@ -89,6 +88,24 @@ public class PantallaEditor extends PantallaBase {
         this.nivel = nivelInicial;
     }
 
+    private PantallaEditor(Juego juego, Nivel nivelInicial, String archivo, boolean sucio,
+                           List<String> historial, int posHistorial) {
+        super(juego);
+        this.nivelInicial = nivelInicial;
+        this.nivel = nivelInicial;
+        this.archivoRestaurar = archivo;
+        this.sucioRestaurar = sucio;
+        this.historialRestaurar = historial == null
+            ? null : new ArrayList<>(historial);
+        this.posHistorialRestaurar = posHistorial;
+    }
+
+    /** Vuelve al editor conservando archivo, cambios y historial tras una prueba. */
+    public static PantallaEditor desdePrueba(Juego juego, Nivel nivel, String archivo,
+                                             boolean sucio, List<String> historial, int posHistorial) {
+        return new PantallaEditor(juego, nivel, archivo, sucio, historial, posHistorial);
+    }
+
     @Override
     protected void alMostrar() {
         dibujante = new DibujanteJuego(lote, fuente);
@@ -104,11 +121,18 @@ public class PantallaEditor extends PantallaBase {
             archivoActual = "";
         } else {
             nivel = nivelInicial;
-            nivel.normalizar();
-            archivoActual = buscarArchivo(nivel);
+            nivel.normalizarEditor();
+            archivoActual = archivoRestaurar != null ? archivoRestaurar : buscarArchivo(nivel);
         }
         encuadrarNivel();
-        reiniciarHistorial();
+        if (historialRestaurar != null && !historialRestaurar.isEmpty()) {
+            historial.clear();
+            historial.addAll(historialRestaurar);
+            posHistorial = Math.max(0, Math.min(posHistorialRestaurar, historial.size() - 1));
+            sucio = sucioRestaurar;
+        } else {
+            reiniciarHistorial();
+        }
         estado = archivoActual.isEmpty()
             ? "Nivel nuevo. Guardalo cuando este listo."
             : "Editando " + archivoActual + ". Guarda con el boton GUARDAR.";
@@ -126,13 +150,22 @@ public class PantallaEditor extends PantallaBase {
         n.origenAguaX = 120f;
         n.origenFuegoY = 30f;
         n.origenAguaY = 30f;
-        n.salidaFuego.set(810f, 30f, 60f, 80f);
-        n.salidaAgua.set(880f, 30f, 60f, 80f);
-        n.agregar(new Nivel.Plataforma(0f, 0f, n.ancho, 30f, "PIEDRA"));
-        n.agregar(new Nivel.Plataforma(0f, 0f, 18f, n.alto, "MURO"));
-        n.agregar(new Nivel.Plataforma(n.ancho - 18f, 0f, 18f, n.alto, "MURO"));
-        n.agregar(new Nivel.Plataforma(0f, n.alto - 16f, n.ancho, 16f, "MURO"));
-        n.agregar(new Nivel.Plataforma(360f, 160f, 200f, 20f, "PIEDRA"));
+        n.salidaFuego.set(810f, 30f, Configuracion.ANCHO_SALIDA_EDITOR, Configuracion.ALTO_SALIDA_EDITOR);
+        n.salidaAgua.set(880f, 30f, Configuracion.ANCHO_SALIDA_EDITOR, Configuracion.ALTO_SALIDA_EDITOR);
+        Nivel.Plataforma piso = new Nivel.Plataforma(0f, 0f, n.ancho, 30f, "PIEDRA");
+        piso.limite = true;
+        n.agregar(piso);
+        Nivel.Plataforma paredIzquierda = new Nivel.Plataforma(0f, 0f, 18f, n.alto, "MURO");
+        paredIzquierda.limite = true;
+        n.agregar(paredIzquierda);
+        Nivel.Plataforma paredDerecha = new Nivel.Plataforma(n.ancho - 18f, 0f, 18f, n.alto, "MURO");
+        paredDerecha.limite = true;
+        n.agregar(paredDerecha);
+        Nivel.Plataforma techo = new Nivel.Plataforma(0f, n.alto - 16f, n.ancho, 16f, "MURO");
+        techo.limite = true;
+        n.agregar(techo);
+        n.agregar(new Nivel.Plataforma(360f, 160f,
+            Configuracion.ANCHO_PLATAFORMA_EDITOR, Configuracion.ALTO_PLATAFORMA_EDITOR, "PIEDRA"));
         n.agregar(new Nivel.Gema(445f, 200f));
         return n;
     }
@@ -208,10 +241,12 @@ public class PantallaEditor extends PantallaBase {
             || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)
             ? 50f : Configuracion.PASO_EDITOR;
         if (tipoSel != TipoSeleccion.NINGUNO) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) moverSeleccion(-paso, 0f);
-            if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) moverSeleccion(paso, 0f);
-            if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) moverSeleccion(0f, paso);
-            if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) moverSeleccion(0f, -paso);
+            boolean movido = false;
+            if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) movido = moverSeleccion(-paso, 0f);
+            if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) movido = moverSeleccion(paso, 0f);
+            if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) movido = moverSeleccion(0f, paso);
+            if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) movido = moverSeleccion(0f, -paso);
+            if (movido) confirmarCambio();
         } else {
             if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) camX -= paso;
             if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) camX += paso;
@@ -255,31 +290,17 @@ public class PantallaEditor extends PantallaBase {
                     ultimoMundoX = mundoX;
                     ultimoMundoY = mundoY;
                 }
-            } else if (esHerramientaRectangulo(herramienta)) {
-                creando = true;
-                crearInicioX = mundoX;
-                crearInicioY = mundoY;
-                crearFinX = mundoX;
-                crearFinY = mundoY;
             } else {
-                crearPunto(herramienta, mundoX, mundoY);
-            }
-        }
-
-        if (creando) {
-            crearFinX = mundoX;
-            crearFinY = mundoY;
-            if (!ui.clicMantenido) {
-                finalizarCreacion();
-                creando = false;
+                crearObjeto(herramienta, mundoX, mundoY);
             }
         }
 
         if (arrastrandoObjeto) {
             if (ui.clicMantenido && (Math.abs(mundoX - ultimoMundoX) > 0.01f
                 || Math.abs(mundoY - ultimoMundoY) > 0.01f)) {
-                moverSeleccion(mundoX - ultimoMundoX, mundoY - ultimoMundoY);
-                objetoMovido = true;
+                if (moverSeleccion(mundoX - ultimoMundoX, mundoY - ultimoMundoY)) {
+                    objetoMovido = true;
+                }
                 ultimoMundoX = mundoX;
                 ultimoMundoY = mundoY;
             }
@@ -288,12 +309,6 @@ public class PantallaEditor extends PantallaBase {
                 if (objetoMovido) confirmarCambio();
             }
         }
-    }
-
-    private boolean esHerramientaRectangulo(Herramienta h) {
-        return h == Herramienta.PLATAFORMA || h == Herramienta.MURO || h == Herramienta.LAVA
-            || h == Herramienta.AGUA || h == Herramienta.PUERTA || h == Herramienta.PUENTE
-            || h == Herramienta.MOVIL;
     }
 
     private void limitarCamara() {
@@ -388,9 +403,11 @@ public class PantallaEditor extends PantallaBase {
             Configuracion.ANCHO_PERSONAJE + 8f, Configuracion.ALTO_PERSONAJE + 8f));
     }
 
-    private void moverSeleccion(float dx, float dy) {
-        dx = redondear(dx);
-        dy = redondear(dy);
+    private boolean moverSeleccion(float dx, float dy) {
+        if (tipoSel == TipoSeleccion.PLATAFORMA && nivel.plataformas[indiceSel].limite) {
+            estado = "Los bordes del escenario son fijos.";
+            return false;
+        }
         switch (tipoSel) {
             case PLATAFORMA: moverRect(nivel.plataformas[indiceSel].rect, dx, dy); break;
             case PELIGRO: moverRect(nivel.peligros[indiceSel].rect, dx, dy); break;
@@ -420,9 +437,10 @@ public class PantallaEditor extends PantallaBase {
                 break;
             case SALIDA_FUEGO: moverRect(nivel.salidaFuego, dx, dy); break;
             case SALIDA_AGUA: moverRect(nivel.salidaAgua, dx, dy); break;
-            default: break;
+            default: return false;
         }
         sucio = true;
+        return true;
     }
 
     private void moverRect(Rectangle r, float dx, float dy) {
@@ -434,115 +452,156 @@ public class PantallaEditor extends PantallaBase {
         return Math.round(valor / Configuracion.PASO_EDITOR) * Configuracion.PASO_EDITOR;
     }
 
-    private void finalizarCreacion() {
-        float x = redondear(Math.min(crearInicioX, crearFinX));
-        float y = redondear(Math.min(crearInicioY, crearFinY));
-        float ancho = Math.abs(crearFinX - crearInicioX);
-        float alto = Math.abs(crearFinY - crearInicioY);
-        boolean clic = ancho < 4f && alto < 4f;
+    private void crearObjeto(Herramienta h, float x, float y) {
+        Rectangle r = rectHerramienta(h, x, y);
+        if (r == null) return;
+        r.x = redondear(r.x);
+        r.y = redondear(r.y);
+        colocarDentro(r);
 
-        switch (herramienta) {
+        switch (h) {
             case PLATAFORMA:
-                if (clic) { ancho = 140f; alto = 20f; }
-                nivel.agregar(new Nivel.Plataforma(x, y, Math.max(10f, ancho), Math.max(10f, alto), "PIEDRA"));
+                nivel.agregar(new Nivel.Plataforma(r.x, r.y, r.width, r.height, "PIEDRA"));
                 tipoSel = TipoSeleccion.PLATAFORMA;
                 indiceSel = nivel.plataformas.length - 1;
                 break;
             case MURO:
-                if (clic) { ancho = 24f; alto = 180f; }
-                nivel.agregar(new Nivel.Plataforma(x, y, Math.max(10f, ancho), Math.max(10f, alto), "MURO"));
+                nivel.agregar(new Nivel.Plataforma(r.x, r.y, r.width, r.height, "MURO"));
                 tipoSel = TipoSeleccion.PLATAFORMA;
                 indiceSel = nivel.plataformas.length - 1;
                 break;
             case LAVA:
-                if (clic) { ancho = 100f; alto = 14f; }
-                nivel.agregar(new Nivel.Peligro(x, y, Math.max(10f, ancho), Math.max(8f, alto), true));
+                nivel.agregar(new Nivel.Peligro(r.x, r.y, r.width, r.height, true));
                 tipoSel = TipoSeleccion.PELIGRO;
                 indiceSel = nivel.peligros.length - 1;
                 break;
             case AGUA:
-                if (clic) { ancho = 100f; alto = 14f; }
-                nivel.agregar(new Nivel.Peligro(x, y, Math.max(10f, ancho), Math.max(8f, alto), false));
+                nivel.agregar(new Nivel.Peligro(r.x, r.y, r.width, r.height, false));
                 tipoSel = TipoSeleccion.PELIGRO;
                 indiceSel = nivel.peligros.length - 1;
                 break;
-            case PUERTA:
-                if (clic) { ancho = 20f; alto = 250f; }
-                nivel.agregar(new Nivel.Puerta(x, y, Math.max(10f, ancho), Math.max(40f, alto),
-                    siguienteId(), "ALGUNA", 0f, false));
-                tipoSel = TipoSeleccion.PUERTA;
-                indiceSel = nivel.puertas.length - 1;
-                break;
-            case PUENTE:
-                if (clic) { ancho = 160f; alto = 16f; }
-                nivel.agregar(new Nivel.Puerta(x, y, Math.max(20f, ancho), Math.max(8f, alto),
-                    siguienteId(), "ALGUNA", 0f, true));
-                tipoSel = TipoSeleccion.PUERTA;
-                indiceSel = nivel.puertas.length - 1;
-                break;
-            case MOVIL:
-                if (clic) { ancho = 110f; alto = 18f; }
-                ancho = Math.max(20f, ancho);
-                alto = Math.max(10f, alto);
-                nivel.agregar(new Nivel.PlataformaMovil(x, y, ancho, alto,
-                    Math.min(nivel.ancho - 20f, x + 200f), y, Configuracion.VELOCIDAD_PLATAFORMA_MOVIL, 0));
-                tipoSel = TipoSeleccion.MOVIL;
-                indiceSel = nivel.moviles.length - 1;
-                break;
-            default:
-                return;
-        }
-        sucio = true;
-        confirmarCambio();
-        estado = "Objeto creado. Ajusta sus propiedades a la derecha o arrastralo.";
-    }
-
-    private void crearPunto(Herramienta h, float x, float y) {
-        switch (h) {
             case GEMA:
-                nivel.agregar(new Nivel.Gema(x - 11f, y - 11f));
+                nivel.agregar(new Nivel.Gema(r.x, r.y));
                 tipoSel = TipoSeleccion.GEMA;
                 indiceSel = nivel.gemas.length - 1;
                 break;
             case PLACA:
-                nivel.agregar(new Nivel.Boton(x - 28f, y - 6f, siguienteId(), "AMBOS"));
+                nivel.agregar(new Nivel.Boton(r.x, r.y, idParaControlNuevo(), "AMBOS"));
                 tipoSel = TipoSeleccion.BOTON;
                 indiceSel = nivel.botones.length - 1;
                 break;
             case PALANCA:
-                nivel.agregar(new Nivel.Palanca(x - 14f, y - 22f, siguienteId(), "AMBOS"));
+                nivel.agregar(new Nivel.Palanca(r.x, r.y, idParaControlNuevo(), "AMBOS"));
                 tipoSel = TipoSeleccion.PALANCA;
                 indiceSel = nivel.palancas.length - 1;
                 break;
+            case PUERTA:
+                nivel.agregar(new Nivel.Puerta(r.x, r.y, r.width, r.height,
+                    idParaPuertaNueva(), "ALGUNA", 0f, false));
+                tipoSel = TipoSeleccion.PUERTA;
+                indiceSel = nivel.puertas.length - 1;
+                break;
+            case PUENTE:
+                nivel.agregar(new Nivel.Puerta(r.x, r.y, r.width, r.height,
+                    idParaPuertaNueva(), "ALGUNA", 0f, true));
+                tipoSel = TipoSeleccion.PUERTA;
+                indiceSel = nivel.puertas.length - 1;
+                break;
+            case MOVIL:
+                nivel.agregar(new Nivel.PlataformaMovil(r.x, r.y, r.width, r.height,
+                    Math.min(nivel.ancho - r.width, r.x + 200f), r.y,
+                    Configuracion.VELOCIDAD_PLATAFORMA_MOVIL, 0));
+                tipoSel = TipoSeleccion.MOVIL;
+                indiceSel = nivel.moviles.length - 1;
+                break;
             case CAJA:
-                nivel.agregar(new Nivel.Caja(x - 20f, y - 20f, false));
+                nivel.agregar(new Nivel.Caja(r.x, r.y, false));
                 tipoSel = TipoSeleccion.CAJA;
                 indiceSel = nivel.cajas.length - 1;
                 break;
             case ORIGEN_FUEGO:
-                nivel.origenFuegoX = x - 15f;
-                nivel.origenFuegoY = y;
+                nivel.origenFuegoX = r.x;
+                nivel.origenFuegoY = r.y;
                 tipoSel = TipoSeleccion.ORIGEN_FUEGO;
+                indiceSel = -1;
                 break;
             case ORIGEN_AGUA:
-                nivel.origenAguaX = x - 15f;
-                nivel.origenAguaY = y;
+                nivel.origenAguaX = r.x;
+                nivel.origenAguaY = r.y;
                 tipoSel = TipoSeleccion.ORIGEN_AGUA;
+                indiceSel = -1;
                 break;
             case SALIDA_FUEGO:
-                nivel.salidaFuego.set(x - 30f, y, 60f, 80f);
+                nivel.salidaFuego.set(r);
                 tipoSel = TipoSeleccion.SALIDA_FUEGO;
+                indiceSel = -1;
                 break;
             case SALIDA_AGUA:
-                nivel.salidaAgua.set(x - 30f, y, 60f, 80f);
+                nivel.salidaAgua.set(r);
                 tipoSel = TipoSeleccion.SALIDA_AGUA;
+                indiceSel = -1;
                 break;
             default:
                 return;
         }
         sucio = true;
         confirmarCambio();
-        estado = "Objeto creado. Revisa sus propiedades.";
+        estado = "Objeto creado con medidas fijas. Arrastralo para moverlo.";
+    }
+
+    private Rectangle rectHerramienta(Herramienta h, float x, float y) {
+        switch (h) {
+            case PLATAFORMA:
+                return new Rectangle(x - Configuracion.ANCHO_PLATAFORMA_EDITOR / 2f, y,
+                    Configuracion.ANCHO_PLATAFORMA_EDITOR, Configuracion.ALTO_PLATAFORMA_EDITOR);
+            case MURO:
+                return new Rectangle(x - Configuracion.ANCHO_MURO_EDITOR / 2f, y,
+                    Configuracion.ANCHO_MURO_EDITOR, Configuracion.ALTO_MURO_EDITOR);
+            case LAVA:
+            case AGUA:
+                return new Rectangle(x - Configuracion.ANCHO_PELIGRO_EDITOR / 2f, y,
+                    Configuracion.ANCHO_PELIGRO_EDITOR, Configuracion.ALTO_PELIGRO_EDITOR);
+            case GEMA:
+                return new Rectangle(x - Configuracion.ANCHO_GEMA_EDITOR / 2f,
+                    y - Configuracion.ALTO_GEMA_EDITOR / 2f,
+                    Configuracion.ANCHO_GEMA_EDITOR, Configuracion.ALTO_GEMA_EDITOR);
+            case PLACA:
+                return new Rectangle(x - Configuracion.ANCHO_BOTON_EDITOR / 2f,
+                    y - Configuracion.ALTO_BOTON_EDITOR / 2f,
+                    Configuracion.ANCHO_BOTON_EDITOR, Configuracion.ALTO_BOTON_EDITOR);
+            case PALANCA:
+                return new Rectangle(x - Configuracion.ANCHO_PALANCA_EDITOR / 2f,
+                    y - Configuracion.ALTO_PALANCA_EDITOR / 2f,
+                    Configuracion.ANCHO_PALANCA_EDITOR, Configuracion.ALTO_PALANCA_EDITOR);
+            case PUERTA:
+                return new Rectangle(x - Configuracion.ANCHO_PUERTA_EDITOR / 2f, y,
+                    Configuracion.ANCHO_PUERTA_EDITOR, Configuracion.ALTO_PUERTA_EDITOR);
+            case PUENTE:
+                return new Rectangle(x - Configuracion.ANCHO_PUENTE_EDITOR / 2f, y,
+                    Configuracion.ANCHO_PUENTE_EDITOR, Configuracion.ALTO_PUENTE_EDITOR);
+            case MOVIL:
+                return new Rectangle(x - Configuracion.ANCHO_MOVIL_EDITOR / 2f, y,
+                    Configuracion.ANCHO_MOVIL_EDITOR, Configuracion.ALTO_MOVIL_EDITOR);
+            case CAJA:
+                return new Rectangle(x - Configuracion.ANCHO_CAJA_EDITOR / 2f,
+                    y - Configuracion.ALTO_CAJA_EDITOR / 2f,
+                    Configuracion.ANCHO_CAJA_EDITOR, Configuracion.ALTO_CAJA_EDITOR);
+            case ORIGEN_FUEGO:
+            case ORIGEN_AGUA:
+                return new Rectangle(x - Configuracion.ANCHO_ORIGEN_EDITOR / 2f, y,
+                    Configuracion.ANCHO_ORIGEN_EDITOR, Configuracion.ALTO_ORIGEN_EDITOR);
+            case SALIDA_FUEGO:
+            case SALIDA_AGUA:
+                return new Rectangle(x - Configuracion.ANCHO_SALIDA_EDITOR / 2f, y,
+                    Configuracion.ANCHO_SALIDA_EDITOR, Configuracion.ALTO_SALIDA_EDITOR);
+            default:
+                return null;
+        }
+    }
+
+    private void colocarDentro(Rectangle r) {
+        r.x = MathUtils.clamp(r.x, 0f, Math.max(0f, nivel.ancho - r.width));
+        r.y = MathUtils.clamp(r.y, 0f, Math.max(0f, nivel.alto - r.height));
     }
 
     private int siguienteId() {
@@ -554,9 +613,54 @@ public class PantallaEditor extends PantallaBase {
         return max + 1;
     }
 
+    /**
+     * Al colocar un control nuevo, si hay una puerta que todavia no tiene
+     * ningun boton ni palanca, se reutiliza su ID. Asi el primer control y la
+     * primera puerta quedan enlazados sin que el usuario tenga que ajustar IDs.
+     */
+    private int idParaControlNuevo() {
+        for (Nivel.Puerta p : nivel.puertas) {
+            if (p.id > 0 && contarControles(p.id) == 0) return p.id;
+        }
+        return siguienteId();
+    }
+
+    /** Al colocar una puerta nueva, reutiliza el ID de un control huerfano. */
+    private int idParaPuertaNueva() {
+        for (Nivel.Boton b : nivel.botones) {
+            if (b.id > 0 && contarPuertas(b.id) == 0) return b.id;
+        }
+        for (Nivel.Palanca p : nivel.palancas) {
+            if (p.id > 0 && contarPuertas(p.id) == 0) return p.id;
+        }
+        return siguienteId();
+    }
+
+    private int contarControles(int id) {
+        int total = 0;
+        for (Nivel.Boton b : nivel.botones) if (b.id == id) total++;
+        for (Nivel.Palanca p : nivel.palancas) if (p.id == id) total++;
+        return total;
+    }
+
+    private int contarPuertas(int id) {
+        int total = 0;
+        for (Nivel.Puerta p : nivel.puertas) if (p.id == id) total++;
+        return total;
+    }
+
     private void eliminarSeleccion() {
         if (tipoSel == TipoSeleccion.NINGUNO) {
             estado = "No hay ningun objeto seleccionado.";
+            return;
+        }
+        if (tipoSel == TipoSeleccion.PLATAFORMA && nivel.plataformas[indiceSel].limite) {
+            estado = "Los bordes del escenario no se pueden borrar.";
+            return;
+        }
+        if (tipoSel == TipoSeleccion.ORIGEN_FUEGO || tipoSel == TipoSeleccion.ORIGEN_AGUA
+            || tipoSel == TipoSeleccion.SALIDA_FUEGO || tipoSel == TipoSeleccion.SALIDA_AGUA) {
+            estado = "Los origenes y las salidas son obligatorios; muevelos, no los borres.";
             return;
         }
         switch (tipoSel) {
@@ -568,7 +672,9 @@ public class PantallaEditor extends PantallaBase {
             case PUERTA: nivel.puertas = quitar(nivel.puertas, indiceSel); break;
             case MOVIL: nivel.moviles = quitar(nivel.moviles, indiceSel); break;
             case CAJA: nivel.cajas = quitar(nivel.cajas, indiceSel); break;
-            default: break;
+            default:
+                estado = "Ese objeto no se puede eliminar.";
+                return;
         }
         tipoSel = TipoSeleccion.NINGUNO;
         indiceSel = -1;
@@ -636,7 +742,7 @@ public class PantallaEditor extends PantallaBase {
         try {
             Nivel nuevo = json.fromJson(Nivel.class, texto);
             if (nuevo == null) return;
-            nuevo.normalizar();
+            nuevo.normalizarEditor();
             nivel = nuevo;
             tipoSel = TipoSeleccion.NINGUNO;
             indiceSel = -1;
@@ -652,11 +758,29 @@ public class PantallaEditor extends PantallaBase {
 
     private void guardar(boolean permitirSobrescribir) {
         try {
-            nivel.normalizar();
-            juego.getGestorNiveles().guardar(nivel, permitirSobrescribir);
-            archivoActual = juego.getGestorNiveles().archivoDeNivel(nivel);
+            nivel.normalizarEditor();
+            GestorNiveles gestor = juego.getGestorNiveles();
+            if (archivoActual.isEmpty()) {
+                String existente = gestor.archivoConNombre(nivel.nombre);
+                if (!existente.isEmpty() && !permitirSobrescribir) {
+                    estado = "Ya existe un nivel llamado \"" + nivel.nombre
+                        + "\". Confirma para sobrescribirlo o cambia el nombre.";
+                    confirmar = "SOBRESCRIBIR";
+                    return;
+                }
+                archivoActual = gestor.guardar(nivel, permitirSobrescribir);
+            } else {
+                String otro = gestor.archivoConNombre(nivel.nombre);
+                if (!otro.isEmpty() && !otro.equalsIgnoreCase(archivoActual)) {
+                    estado = "Ya existe otro nivel llamado \"" + nivel.nombre + "\". Cambia el nombre.";
+                    confirmar = "";
+                    return;
+                }
+                archivoActual = gestor.guardarEn(nivel, archivoActual);
+            }
             sucio = false;
             estado = "Guardado en " + archivoActual + ".";
+            confirmar = "";
         } catch (IOException e) {
             String mensaje = e.getMessage() == null ? "Error al guardar." : e.getMessage();
             if (!permitirSobrescribir && (mensaje.contains("Ya existe")
@@ -682,6 +806,7 @@ public class PantallaEditor extends PantallaBase {
         archivoActual = "";
         tipoSel = TipoSeleccion.NINGUNO;
         indiceSel = -1;
+        sucio = false;
         encuadrarNivel();
         reiniciarHistorial();
         estado = "Nivel nuevo creado.";
@@ -718,9 +843,19 @@ public class PantallaEditor extends PantallaBase {
     }
 
     private void abrirSelector() {
+        if (sucio) {
+            confirmar = "CARGAR";
+            estado = "Hay cambios sin guardar. Confirma para abrir otro nivel.";
+            return;
+        }
+        abrirSelectorAhora();
+    }
+
+    private void abrirSelectorAhora() {
         listaNiveles = juego.getGestorNiveles().listar();
         paginaSelector = 0;
         selectorAbierto = true;
+        confirmar = "";
     }
 
     private void cargarEntrada(GestorNiveles.Entrada entrada) {
@@ -733,6 +868,7 @@ public class PantallaEditor extends PantallaBase {
             archivoActual = entrada.archivo;
             tipoSel = TipoSeleccion.NINGUNO;
             indiceSel = -1;
+            sucio = false;
             selectorAbierto = false;
             encuadrarNivel();
             reiniciarHistorial();
@@ -743,16 +879,13 @@ public class PantallaEditor extends PantallaBase {
     }
 
     private void duplicarActual() {
-        if (archivoActual.isEmpty()) {
-            estado = "Guarda el nivel antes de duplicarlo.";
-            return;
-        }
         Gdx.input.getTextInput(new Input.TextInputListener() {
             @Override public void input(String texto) {
                 if (texto == null || texto.trim().isEmpty()) return;
                 try {
-                    Nivel copia = juego.getGestorNiveles().duplicar(archivoActual, texto.trim());
-                    estado = "Copia creada: " + copia.nombre + ".";
+                    Nivel copia = juego.getGestorNiveles().duplicarNivel(nivel, texto.trim());
+                    estado = "Copia creada: " + copia.nombre + " (" +
+                        juego.getGestorNiveles().archivoConNombre(copia.nombre) + ").";
                 } catch (IOException e) {
                     estado = e.getMessage();
                 }
@@ -762,6 +895,7 @@ public class PantallaEditor extends PantallaBase {
     }
 
     private void probarNivel() {
+        nivel.normalizarEditor();
         List<String> errores = ValidadorNivel.validar(nivel);
         if (!errores.isEmpty()) {
             StringBuilder sb = new StringBuilder("No se puede probar: ");
@@ -772,7 +906,8 @@ public class PantallaEditor extends PantallaBase {
             estado = sb.toString();
             return;
         }
-        cambiarPantalla(PantallaJuego.pruebaEditor(juego, nivel));
+        cambiarPantalla(PantallaJuego.pruebaEditor(juego, nivel, archivoActual, sucio,
+            historial, posHistorial));
     }
 
     // =========================================================
@@ -866,19 +1001,20 @@ public class PantallaEditor extends PantallaBase {
             pedirTexto("Nombre del nivel", nivel.nombre, new CambioTexto() {
                 @Override public void aplicar(String texto) {
                     nivel.nombre = texto.trim().isEmpty() ? "Nuevo nivel" : texto.trim();
+                    confirmarCambio();
                 }
             });
         }
         y -= 34f;
         if (ui.boton("EDITAR PISTA", 752f, y - 8f, 188f, 28f)) {
             pedirTexto("Pista del nivel", nivel.pista, new CambioTexto() {
-                @Override public void aplicar(String texto) { nivel.pista = texto; }
+                @Override public void aplicar(String texto) { nivel.pista = texto; confirmarCambio(); }
             });
         }
         y -= 34f;
         if (ui.boton("AUTOR: " + recortar(nivel.autor, 14), 752f, y - 8f, 188f, 28f)) {
             pedirTexto("Autor del nivel", nivel.autor, new CambioTexto() {
-                @Override public void aplicar(String texto) { nivel.autor = texto; }
+                @Override public void aplicar(String texto) { nivel.autor = texto; confirmarCambio(); }
             });
         }
         y -= 34f;
@@ -886,34 +1022,42 @@ public class PantallaEditor extends PantallaBase {
             @Override public void run() { nivel.tema = siguienteTema(nivel.tema); }
         });
         y -= 30f;
-        filaNumero("ANCHO", nivel.ancho, y, 50f, new Ajuste() {
-            @Override public void cambiar(float d) {
-                nivel.ancho = MathUtils.clamp(nivel.ancho + d,
-                    Configuracion.ANCHO_MINIMO_NIVEL, Configuracion.ANCHO_MAXIMO_NIVEL);
-            }
-        });
-        y -= 30f;
-        filaNumero("ALTO", nivel.alto, y, 50f, new Ajuste() {
-            @Override public void cambiar(float d) {
-                nivel.alto = MathUtils.clamp(nivel.alto + d,
-                    Configuracion.ALTO_MINIMO_NIVEL, Configuracion.ALTO_MAXIMO_NIVEL);
-            }
-        });
-        y -= 38f;
+        Dibujo.texto(lote, fuente, "ESCENARIO ESTANDAR", 752f, y,
+            Configuracion.TEXTO_SUAVE, 0.60f);
+        y -= 18f;
+        Dibujo.texto(lote, fuente, "Medidas fijas por tipo de objeto.", 752f, y,
+            Configuracion.TEXTO_SUAVE, 0.56f);
+        y -= 26f;
         Dibujo.texto(lote, fuente, "Elige una herramienta y", 752f, y,
             Configuracion.TEXTO_SUAVE, 0.60f);
-        Dibujo.texto(lote, fuente, "haz clic o arrastra en el area.", 752f, y - 18f,
+        Dibujo.texto(lote, fuente, "haz clic en el area para colocar.", 752f, y - 18f,
             Configuracion.TEXTO_SUAVE, 0.60f);
+        Dibujo.texto(lote, fuente, "Arrastra el objeto para moverlo.", 752f, y - 36f,
+            Configuracion.TEXTO_SUAVE, 0.56f);
     }
 
     private void dibujarPropiedadesPlataforma(float y) {
         Nivel.Plataforma o = nivel.plataformas[indiceSel];
-        Dibujo.texto(lote, fuente, "PLATAFORMA", 752f, 486f, Configuracion.DORADO, 0.72f);
-        y = filaRectangulo(o.rect, 458f);
-        filaCiclo("ESTILO", o.estilo, y, new Runnable() {
-            @Override public void run() { o.estilo = siguienteEstilo(o.estilo); }
-        });
-        y -= 38f;
+        Dibujo.texto(lote, fuente, o.limite ? "BORDE DEL ESCENARIO" : "PLATAFORMA",
+            752f, 486f, Configuracion.DORADO, 0.72f);
+        if (o.limite) {
+            Dibujo.texto(lote, fuente, "Borde fijo del recinto.", 752f, 452f,
+                Configuracion.TEXTO, 0.64f);
+            Dibujo.texto(lote, fuente, "No se mueve ni se borra.", 752f, 430f,
+                Configuracion.TEXTO_SUAVE, 0.60f);
+            return;
+        }
+        y = filaPosicion(o.rect, 458f);
+        if ("MURO".equalsIgnoreCase(o.estilo)) {
+            Dibujo.texto(lote, fuente, "ESTILO: MURO", 752f, y,
+                Configuracion.TEXTO_SUAVE, 0.64f);
+            y -= 30f;
+        } else {
+            filaCiclo("ESTILO", o.estilo, y, new Runnable() {
+                @Override public void run() { o.estilo = siguienteEstilo(o.estilo); }
+            });
+            y -= 38f;
+        }
         if (ui.botonColor("ELIMINAR", 752f, y - 8f, 188f, 28f, Configuracion.ROJO)) {
             eliminarSeleccion();
         }
@@ -922,7 +1066,7 @@ public class PantallaEditor extends PantallaBase {
     private void dibujarPropiedadesPeligro(float y) {
         Nivel.Peligro o = nivel.peligros[indiceSel];
         Dibujo.texto(lote, fuente, "PELIGRO", 752f, 486f, Configuracion.DORADO, 0.72f);
-        y = filaRectangulo(o.rect, 458f);
+        y = filaPosicion(o.rect, 458f);
         filaToggle("ES LAVA", o.lava, y, new AjusteBooleano() {
             @Override public void cambiar(boolean v) { o.lava = v; }
         });
@@ -938,7 +1082,7 @@ public class PantallaEditor extends PantallaBase {
     private void dibujarPropiedadesGema(float y) {
         Nivel.Gema o = nivel.gemas[indiceSel];
         Dibujo.texto(lote, fuente, "GEMA", 752f, 486f, Configuracion.DORADO, 0.72f);
-        y = filaRectangulo(o.rect, 458f);
+        y = filaPosicion(o.rect, 458f);
         filaToggle("SECRETA", o.secreta, y, new AjusteBooleano() {
             @Override public void cambiar(boolean v) { o.secreta = v; }
         });
@@ -951,7 +1095,7 @@ public class PantallaEditor extends PantallaBase {
     private void dibujarPropiedadesBoton(float y) {
         Nivel.Boton o = nivel.botones[indiceSel];
         Dibujo.texto(lote, fuente, "PLACA DE PRESION", 752f, 486f, Configuracion.DORADO, 0.72f);
-        y = filaRectangulo(o.rect, 458f);
+        y = filaPosicion(o.rect, 458f);
         filaNumero("ID", o.id, y, 1f, new Ajuste() {
             @Override public void cambiar(float d) { o.id = Math.max(1, Math.round(o.id + d)); }
         });
@@ -968,7 +1112,7 @@ public class PantallaEditor extends PantallaBase {
     private void dibujarPropiedadesPalanca(float y) {
         Nivel.Palanca o = nivel.palancas[indiceSel];
         Dibujo.texto(lote, fuente, "PALANCA", 752f, 486f, Configuracion.DORADO, 0.72f);
-        y = filaRectangulo(o.rect, 458f);
+        y = filaPosicion(o.rect, 458f);
         filaNumero("ID", o.id, y, 1f, new Ajuste() {
             @Override public void cambiar(float d) { o.id = Math.max(1, Math.round(o.id + d)); }
         });
@@ -994,7 +1138,7 @@ public class PantallaEditor extends PantallaBase {
         Nivel.Puerta o = nivel.puertas[indiceSel];
         Dibujo.texto(lote, fuente, o.puente ? "PUENTE DE ENERGIA" : "PUERTA",
             752f, 486f, Configuracion.DORADO, 0.72f);
-        y = filaRectangulo(o.rect, 458f);
+        y = filaPosicion(o.rect, 458f);
         filaNumero("ID", o.id, y, 1f, new Ajuste() {
             @Override public void cambiar(float d) { o.id = Math.max(1, Math.round(o.id + d)); }
         });
@@ -1008,7 +1152,13 @@ public class PantallaEditor extends PantallaBase {
         });
         y -= 30f;
         filaToggle("ES PUENTE", o.puente, y, new AjusteBooleano() {
-            @Override public void cambiar(boolean v) { o.puente = v; }
+            @Override public void cambiar(boolean v) {
+                o.puente = v;
+                if (v) o.rect.setSize(Configuracion.ANCHO_PUENTE_EDITOR, Configuracion.ALTO_PUENTE_EDITOR);
+                else o.rect.setSize(Configuracion.ANCHO_PUERTA_EDITOR, Configuracion.ALTO_PUERTA_EDITOR);
+                o.rect.x = MathUtils.clamp(o.rect.x, 0f, Math.max(0f, nivel.ancho - o.rect.width));
+                o.rect.y = MathUtils.clamp(o.rect.y, 0f, Math.max(0f, nivel.alto - o.rect.height));
+            }
         });
         y -= 38f;
         if (ui.botonColor("ELIMINAR", 752f, y - 8f, 188f, 28f, Configuracion.ROJO)) {
@@ -1019,7 +1169,7 @@ public class PantallaEditor extends PantallaBase {
     private void dibujarPropiedadesMovil(float y) {
         Nivel.PlataformaMovil o = nivel.moviles[indiceSel];
         Dibujo.texto(lote, fuente, "PLATAFORMA MOVIL", 752f, 486f, Configuracion.DORADO, 0.72f);
-        y = filaRectangulo(o.rect, 458f);
+        y = filaPosicion(o.rect, 458f);
         filaNumero("FIN X", o.finX, y, pasoEdicion(), new Ajuste() {
             @Override public void cambiar(float d) {
                 o.finX = MathUtils.clamp(o.finX + d, 10f, nivel.ancho - 10f);
@@ -1048,7 +1198,7 @@ public class PantallaEditor extends PantallaBase {
     private void dibujarPropiedadesCaja(float y) {
         Nivel.Caja o = nivel.cajas[indiceSel];
         Dibujo.texto(lote, fuente, "CAJA", 752f, 486f, Configuracion.DORADO, 0.72f);
-        y = filaRectangulo(o.rect, 458f);
+        y = filaPosicion(o.rect, 458f);
         filaToggle("PESADA", o.pesada, y, new AjusteBooleano() {
             @Override public void cambiar(boolean v) { o.pesada = v; }
         });
@@ -1084,13 +1234,13 @@ public class PantallaEditor extends PantallaBase {
                 Configuracion.TEXTO_SUAVE, 0.58f);
         } else {
             Rectangle r = tipoSel == TipoSeleccion.SALIDA_FUEGO ? nivel.salidaFuego : nivel.salidaAgua;
-            y = filaRectangulo(r, 458f);
+            y = filaPosicion(r, 458f);
             Dibujo.texto(lote, fuente, "La salida debe quedar libre.", 752f, y,
                 Configuracion.TEXTO_SUAVE, 0.58f);
         }
     }
 
-    private float filaRectangulo(Rectangle r, float y) {
+    private float filaPosicion(Rectangle r, float y) {
         filaNumero("X", r.x, y, pasoEdicion(), new Ajuste() {
             @Override public void cambiar(float d) {
                 r.x = MathUtils.clamp(r.x + d, 0f, Math.max(0f, nivel.ancho - r.width));
@@ -1100,18 +1250,6 @@ public class PantallaEditor extends PantallaBase {
         filaNumero("Y", r.y, y, pasoEdicion(), new Ajuste() {
             @Override public void cambiar(float d) {
                 r.y = MathUtils.clamp(r.y + d, 0f, Math.max(0f, nivel.alto - r.height));
-            }
-        });
-        y -= 30f;
-        filaNumero("ANCHO", r.width, y, pasoEdicion(), new Ajuste() {
-            @Override public void cambiar(float d) {
-                r.width = MathUtils.clamp(r.width + d, 4f, nivel.ancho - r.x);
-            }
-        });
-        y -= 30f;
-        filaNumero("ALTO", r.height, y, pasoEdicion(), new Ajuste() {
-            @Override public void cambiar(float d) {
-                r.height = MathUtils.clamp(r.height + d, 4f, nivel.alto - r.y);
             }
         });
         return y - 34f;
@@ -1125,7 +1263,7 @@ public class PantallaEditor extends PantallaBase {
     }
 
     private static String siguienteEstilo(String actual) {
-        String[] estilos = {"PIEDRA", "MADERA", "METAL", "MURO"};
+        String[] estilos = {"PIEDRA", "MADERA", "METAL"};
         for (int i = 0; i < estilos.length; i++) {
             if (estilos[i].equalsIgnoreCase(actual)) return estilos[(i + 1) % estilos.length];
         }
@@ -1211,13 +1349,19 @@ public class PantallaEditor extends PantallaBase {
         dibujarOrigen(nivel.origenFuegoX, nivel.origenFuegoY, Configuracion.FUEGO, "F");
         dibujarOrigen(nivel.origenAguaX, nivel.origenAguaY, Configuracion.AGUA, "A");
 
-        if (creando) {
-            float x = Math.min(crearInicioX, crearFinX);
-            float y = Math.min(crearInicioY, crearFinY);
-            float ancho = Math.max(1f, Math.abs(crearFinX - crearInicioX));
-            float alto = Math.max(1f, Math.abs(crearFinY - crearInicioY));
-            Dibujo.rectangulo(lote, x, y, ancho, alto, new Color(1f, 1f, 1f, 0.12f));
-            marco(new Rectangle(x, y, ancho, alto), Configuracion.DORADO);
+        if (herramienta != Herramienta.SELECCION && ui.dentro(150f, 60f, 590f, 440f)) {
+            Rectangle fantasma = rectHerramienta(herramienta, mundoX, mundoY);
+            if (fantasma != null) {
+                Dibujo.rectangulo(lote, fantasma.x, fantasma.y, fantasma.width, fantasma.height,
+                    new Color(1f, 1f, 1f, 0.13f));
+                marco(fantasma, Configuracion.DORADO);
+                if (herramienta == Herramienta.MOVIL) {
+                    Dibujo.linea(lote, fantasma.x + fantasma.width / 2f,
+                        fantasma.y + fantasma.height / 2f,
+                        Math.min(nivel.ancho - fantasma.width, fantasma.x + 200f) + fantasma.width / 2f,
+                        fantasma.y + fantasma.height / 2f, 1.5f, new Color(0.55f, 0.80f, 1f, 0.45f));
+                }
+            }
         }
 
         Rectangle seleccion = rectSeleccion();
@@ -1259,11 +1403,17 @@ public class PantallaEditor extends PantallaBase {
     }
 
     private void dibujarInterfaz() {
+        // Con un modal abierto, la interfaz de fondo se dibuja pero no recibe
+        // clics. Asi no se dispara GUARDAR, SALIR o una herramienta por error.
+        boolean modal = selectorAbierto || !confirmar.isEmpty();
+        boolean clicGuardado = ui.clic;
+        if (modal) ui.clic = false;
         dibujarBarraSuperior();
         dibujarPaleta();
         dibujarPropiedades();
+        ui.clic = clicGuardado;
         dibujarEstado();
-        if (selectorAbierto) dibujarSelector();
+        if (selectorAbierto && confirmar.isEmpty()) dibujarSelector();
         if (!confirmar.isEmpty()) dibujarConfirmacion();
     }
 
@@ -1374,12 +1524,12 @@ public class PantallaEditor extends PantallaBase {
                 if (ui.boton("CARGAR", 760f, y + 3f, 76f, 28f)) cargarEntrada(e);
             }
             int maxPagina = Math.max(0, (listaNiveles.size() - 1) / 7);
-            if (ui.boton("<", 330f, 80f, 46f, 28f) && paginaSelector > 0) paginaSelector--;
+            if (ui.boton("<", 330f, 108f, 46f, 28f) && paginaSelector > 0) paginaSelector--;
             Dibujo.textoCentrado(lote, fuente, "Pagina " + (paginaSelector + 1) + " / " + (maxPagina + 1),
-                480f, 100f, Configuracion.TEXTO_SUAVE, 0.62f);
-            if (ui.boton(">", 584f, 80f, 46f, 28f) && paginaSelector < maxPagina) paginaSelector++;
+                480f, 126f, Configuracion.TEXTO_SUAVE, 0.62f);
+            if (ui.boton(">", 584f, 108f, 46f, 28f) && paginaSelector < maxPagina) paginaSelector++;
         }
-        if (ui.boton("CANCELAR", 400f, 76f, 160f, 30f)) selectorAbierto = false;
+        if (ui.boton("CANCELAR", 400f, 70f, 160f, 30f)) selectorAbierto = false;
     }
 
     private void dibujarConfirmacion() {
@@ -1394,6 +1544,9 @@ public class PantallaEditor extends PantallaBase {
         } else if ("NUEVO".equals(confirmar)) {
             titulo = "NUEVO NIVEL";
             texto = "Hay cambios sin guardar. Crear un nivel nuevo?";
+        } else if ("CARGAR".equals(confirmar)) {
+            titulo = "CARGAR OTRO NIVEL";
+            texto = "Hay cambios sin guardar. Abrir la lista de niveles?";
         } else if ("BORRAR_ARCHIVO".equals(confirmar)) {
             titulo = "BORRAR ARCHIVO";
             texto = "Se borrara " + archivoActual + " de la carpeta de niveles.";
@@ -1408,6 +1561,7 @@ public class PantallaEditor extends PantallaBase {
             confirmar = "";
             if ("SALIR".equals(accion)) salirDelEditor();
             else if ("NUEVO".equals(accion)) crearNuevo();
+            else if ("CARGAR".equals(accion)) abrirSelectorAhora();
             else if ("BORRAR_ARCHIVO".equals(accion)) borrarArchivo();
             else if ("SOBRESCRIBIR".equals(accion)) guardar(true);
         }

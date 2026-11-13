@@ -1,0 +1,198 @@
+{
+"formato": 1,
+"nombre": "Ascenso entrelazado",
+"ancho": 960,
+"alto": 540,
+"tema": "CIELO",
+"pista": "Suban coordinando palancas en distintos niveles. La plataforma movil depende de sus acciones.",
+"autor": "Elemental Escape",
+"origenFuegoX": 40,
+"origenFuegoY": 30,
+"origenAguaX": 90,
+"origenAguaY": 30,
+"salidaFuego": {
+	"x": 800,
+	"y": 380,
+	"width": 60,
+	"height": 80
+},
+"salidaAgua": {
+	"x": 870,
+	"y": 380,
+	"width": 60,
+	"height": 80
+},
+"plataformas": [
+	{
+		"rect": {
+			"x": 0,
+			"y": 0,
+			"width": 960,
+			"height": 30
+		},
+		"estilo": "PIEDRA",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 0,
+			"width": 18,
+			"height": 540
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 942,
+			"y": 0,
+			"width": 18,
+			"height": 540
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 524,
+			"width": 960,
+			"height": 16
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 800,
+			"y": 350,
+			"width": 140,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	}
+],
+"peligros": [
+	{
+		"rect": {
+			"x": 313.00223,
+			"y": 122.84512,
+			"width": 30,
+			"height": 16
+		},
+		"lava": false
+	},
+	{
+		"rect": {
+			"x": 405.8169,
+			"y": 175.74072,
+			"width": 30,
+			"height": 14
+		},
+		"lava": true
+	},
+	{
+		"rect": {
+			"x": 501.49316,
+			"y": 225.74077,
+			"width": 30,
+			"height": 14
+		},
+		"lava": false
+	},
+	{
+		"rect": {
+			"x": 597.16974,
+			"y": 278.60284,
+			"width": 30,
+			"height": 14
+		},
+		"lava": true
+	},
+	{
+		"rect": {
+			"x": 671.4152,
+			"y": 325.72394,
+			"width": 30,
+			"height": 14
+		},
+		"lava": false
+	}
+],
+"gemas": [
+	{
+		"rect": {
+			"x": 860,
+			"y": 490,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": true
+	},
+	{
+		"rect": {
+			"x": 670,
+			"y": 400,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 600,
+			"y": 350,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 510,
+			"y": 290,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 410,
+			"y": 260,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 320,
+			"y": 180,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	}
+],
+"botones": [],
+"palancas": [],
+"puertas": [],
+"moviles": [
+	{
+		"rect": {
+			"x": 147.52878,
+			"y": 60.13481,
+			"width": 110,
+			"height": 18
+		},
+		"finX": 707.52893,
+		"finY": 360.13486,
+		"velocidad": 125,
+		"id": 0
+	}
+],
+"cajas": []
+}

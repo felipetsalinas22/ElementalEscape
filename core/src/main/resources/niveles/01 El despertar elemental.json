@@ -1,0 +1,273 @@
+{
+"formato": 1,
+"nombre": "El despertar elemental",
+"ancho": 960,
+"alto": 540,
+"tema": "TEMPLO",
+"pista": "Fuego y Agua deben abrirse paso mutuamente: cada uno activa la palanca de su elemento.",
+"autor": "Elemental Escape",
+"origenFuegoX": 40,
+"origenFuegoY": 30,
+"origenAguaX": 90,
+"origenAguaY": 30,
+"salidaFuego": {
+	"x": 784.8583,
+	"y": 41.302673,
+	"width": 60,
+	"height": 80
+},
+"salidaAgua": {
+	"x": 862.6665,
+	"y": 46.092804,
+	"width": 60,
+	"height": 80
+},
+"plataformas": [
+	{
+		"rect": {
+			"x": 0,
+			"y": 0,
+			"width": 960,
+			"height": 30
+		},
+		"estilo": "PIEDRA",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 0,
+			"width": 18,
+			"height": 540
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 942,
+			"y": 0,
+			"width": 18,
+			"height": 540
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 524,
+			"width": 960,
+			"height": 16
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 23.934814,
+			"y": 129.54755,
+			"width": 110,
+			"height": 18
+		},
+		"estilo": "MADERA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 24.61853,
+			"y": 351.0142,
+			"width": 190,
+			"height": 18
+		},
+		"estilo": "MADERA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 120.88254,
+			"y": 222.40271,
+			"width": 120,
+			"height": 18
+		},
+		"estilo": "MADERA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 355.93118,
+			"y": 336.62015,
+			"width": 300,
+			"height": 20
+		},
+		"estilo": "MADERA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 269.06033,
+			"y": 309.06393,
+			"width": 30,
+			"height": 20
+		},
+		"estilo": "MADERA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 355.69476,
+			"y": 40,
+			"width": 24,
+			"height": 290
+		},
+		"estilo": "MURO",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 505.4132,
+			"y": 207.62099,
+			"width": 435.27216,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 720,
+			"y": 360,
+			"width": 140,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 351.86734,
+			"y": 453.04056,
+			"width": 24,
+			"height": 40
+		},
+		"estilo": "MURO",
+		"limite": false
+	}
+],
+"peligros": [
+	{
+		"rect": {
+			"x": 78.923615,
+			"y": 363.85333,
+			"width": 100,
+			"height": 14
+		},
+		"lava": false
+	},
+	{
+		"rect": {
+			"x": 201.5659,
+			"y": 20.623978,
+			"width": 150,
+			"height": 14
+		},
+		"lava": true
+	},
+	{
+		"rect": {
+			"x": 726.3845,
+			"y": 366.38297,
+			"width": 130,
+			"height": 14
+		},
+		"lava": true
+	}
+],
+"gemas": [
+	{
+		"rect": {
+			"x": 170,
+			"y": 260,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 60,
+			"y": 170,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 120,
+			"y": 430,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 780,
+			"y": 420,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 660,
+			"y": 70,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 500,
+			"y": 70,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	}
+],
+"botones": [],
+"palancas": [
+	{
+		"rect": {
+			"x": 37.779053,
+			"y": 374.39645,
+			"width": 28,
+			"height": 44
+		},
+		"id": 1,
+		"elemento": "AGUA",
+		"orden": 0,
+		"grupo": 1
+	}
+],
+"puertas": [
+	{
+		"rect": {
+			"x": 353.01898,
+			"y": 359.95764,
+			"width": 20,
+			"height": 90
+		},
+		"id": 1,
+		"modo": "ALGUNA",
+		"duracion": 0,
+		"puente": false
+	}
+],
+"moviles": [],
+"cajas": []
+}

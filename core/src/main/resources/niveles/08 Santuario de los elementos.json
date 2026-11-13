@@ -1,0 +1,922 @@
+{
+"formato": 1,
+"nombre": "Santuario de los elementos",
+"ancho": 1660,
+"alto": 500,
+"tema": "FINAL",
+"pista": "Etapas encadenadas: empujen, activen en orden y coordinen cada paso hasta el final.",
+"autor": "Elemental Escape",
+"origenFuegoX": 30,
+"origenFuegoY": 30,
+"origenAguaX": 65,
+"origenAguaY": 30,
+"salidaFuego": {
+	"x": 1569.4983,
+	"y": 164.86624,
+	"width": 60,
+	"height": 80
+},
+"salidaAgua": {
+	"x": 1564.6825,
+	"y": 389.64322,
+	"width": 60,
+	"height": 80
+},
+"plataformas": [
+	{
+		"rect": {
+			"x": 0,
+			"y": 0,
+			"width": 1660,
+			"height": 30
+		},
+		"estilo": "PIEDRA",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 0,
+			"width": 18,
+			"height": 500
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 1642,
+			"y": 0,
+			"width": 18,
+			"height": 500
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 484,
+			"width": 1660,
+			"height": 16
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 0,
+			"width": 1700,
+			"height": 30
+		},
+		"estilo": "PIEDRA",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 1642,
+			"y": 0,
+			"width": 18,
+			"height": 500
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 484,
+			"width": 1700,
+			"height": 16
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 484,
+			"width": 1700,
+			"height": 16
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 484,
+			"width": 1700,
+			"height": 16
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 484,
+			"width": 1700,
+			"height": 16
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 484,
+			"width": 1700,
+			"height": 16
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 484,
+			"width": 1700,
+			"height": 16
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 484,
+			"width": 1700,
+			"height": 16
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 484,
+			"width": 1700,
+			"height": 16
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 484,
+			"width": 1700,
+			"height": 16
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 484,
+			"width": 1700,
+			"height": 16
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 0,
+			"y": 484,
+			"width": 1700,
+			"height": 16
+		},
+		"estilo": "MURO",
+		"limite": true
+	},
+	{
+		"rect": {
+			"x": 393.1839,
+			"y": 26.406342,
+			"width": 24,
+			"height": 264
+		},
+		"estilo": "MURO",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 117.525024,
+			"y": 364.91595,
+			"width": 180,
+			"height": 8
+		},
+		"estilo": "MADERA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 296.0536,
+			"y": 32.20024,
+			"width": 8,
+			"height": 340
+		},
+		"estilo": "MURO",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 20,
+			"y": 110,
+			"width": 80,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 20,
+			"y": 250.8722,
+			"width": 80,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 530,
+			"y": 120,
+			"width": 24,
+			"height": 360
+		},
+		"estilo": "MURO",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 681.23737,
+			"y": 231.10002,
+			"width": 40,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 561.60535,
+			"y": 135.55005,
+			"width": 30,
+			"height": 18
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 804.31415,
+			"y": 276.14462,
+			"width": 20,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 914.68256,
+			"y": 314.81668,
+			"width": 20,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 991.3715,
+			"y": 269.63324,
+			"width": 20,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1051.6052,
+			"y": 327.8889,
+			"width": 20,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1214.2139,
+			"y": 268.8999,
+			"width": 20,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1297.6592,
+			"y": 358.39444,
+			"width": 140,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1414.0806,
+			"y": 288.30524,
+			"width": 24,
+			"height": 90
+		},
+		"estilo": "MURO",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1513.4778,
+			"y": 295.18332,
+			"width": 24,
+			"height": 90
+		},
+		"estilo": "MURO",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1436.923,
+			"y": 290,
+			"width": 100,
+			"height": 8
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1520,
+			"y": 361.60556,
+			"width": 140,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 679.5318,
+			"y": 31.97229,
+			"width": 40,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1296.789,
+			"y": 235.32199,
+			"width": 24,
+			"height": 140
+		},
+		"estilo": "MURO",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 811.6052,
+			"y": 60.733322,
+			"width": 20,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 921.371,
+			"y": 91.10014,
+			"width": 20,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 994.81586,
+			"y": 48.761124,
+			"width": 20,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1062.207,
+			"y": 90.36664,
+			"width": 20,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1216.0532,
+			"y": 69.999954,
+			"width": 20,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1296.7892,
+			"y": 27.15561,
+			"width": 24,
+			"height": 110
+		},
+		"estilo": "MURO",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1296.7893,
+			"y": 118.02771,
+			"width": 140,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1408.395,
+			"y": 28.76117,
+			"width": 28,
+			"height": 100
+		},
+		"estilo": "MURO",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1530,
+			"y": 131.60551,
+			"width": 130,
+			"height": 20
+		},
+		"estilo": "PIEDRA",
+		"limite": false
+	},
+	{
+		"rect": {
+			"x": 1531.6056,
+			"y": 27.294388,
+			"width": 24,
+			"height": 120
+		},
+		"estilo": "MURO",
+		"limite": false
+	}
+],
+"peligros": [
+	{
+		"rect": {
+			"x": 723.44476,
+			"y": 30,
+			"width": 560,
+			"height": 6
+		},
+		"lava": false
+	},
+	{
+		"rect": {
+			"x": 728.39465,
+			"y": 240.87215,
+			"width": 560,
+			"height": 14
+		},
+		"lava": true
+	},
+	{
+		"rect": {
+			"x": 996.5004,
+			"y": 278.61172,
+			"width": 10,
+			"height": 14
+		},
+		"lava": true
+	},
+	{
+		"rect": {
+			"x": 804.68195,
+			"y": 287.718,
+			"width": 20,
+			"height": 14
+		},
+		"lava": false
+	},
+	{
+		"rect": {
+			"x": 915.17773,
+			"y": 324.06683,
+			"width": 20,
+			"height": 14
+		},
+		"lava": false
+	},
+	{
+		"rect": {
+			"x": 1051.2318,
+			"y": 339.3059,
+			"width": 20,
+			"height": 14
+		},
+		"lava": false
+	},
+	{
+		"rect": {
+			"x": 1213.9885,
+			"y": 281.214,
+			"width": 20,
+			"height": 14
+		},
+		"lava": false
+	},
+	{
+		"rect": {
+			"x": 324.0803,
+			"y": 213.94449,
+			"width": 50,
+			"height": 14
+		},
+		"lava": false
+	},
+	{
+		"rect": {
+			"x": 324.0802,
+			"y": 133.57776,
+			"width": 50,
+			"height": 14
+		},
+		"lava": true
+	},
+	{
+		"rect": {
+			"x": 1439.6321,
+			"y": 296.78894,
+			"width": 80,
+			"height": 14
+		},
+		"lava": true
+	},
+	{
+		"rect": {
+			"x": 1440,
+			"y": 30,
+			"width": 90,
+			"height": 14
+		},
+		"lava": false
+	},
+	{
+		"rect": {
+			"x": 810.5377,
+			"y": 70.00003,
+			"width": 20,
+			"height": 14
+		},
+		"lava": true
+	},
+	{
+		"rect": {
+			"x": 921.6422,
+			"y": 100,
+			"width": 20,
+			"height": 14
+		},
+		"lava": true
+	},
+	{
+		"rect": {
+			"x": 1062.6196,
+			"y": 104.85886,
+			"width": 20,
+			"height": 14
+		},
+		"lava": true
+	},
+	{
+		"rect": {
+			"x": 1216.4231,
+			"y": 84.85614,
+			"width": 20,
+			"height": 14
+		},
+		"lava": true
+	},
+	{
+		"rect": {
+			"x": 995.1124,
+			"y": 62.082382,
+			"width": 20,
+			"height": 14
+		},
+		"lava": false
+	}
+],
+"gemas": [
+	{
+		"rect": {
+			"x": 568.0267,
+			"y": 172.2002,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": true
+	},
+	{
+		"rect": {
+			"x": 250,
+			"y": 140,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": true
+	},
+	{
+		"rect": {
+			"x": 910,
+			"y": 390,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": true
+	},
+	{
+		"rect": {
+			"x": 1050,
+			"y": 400,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": true
+	},
+	{
+		"rect": {
+			"x": 920,
+			"y": 160,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": true
+	},
+	{
+		"rect": {
+			"x": 1060,
+			"y": 160,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": true
+	},
+	{
+		"rect": {
+			"x": 1220,
+			"y": 140,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 1210,
+			"y": 340,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 460,
+			"y": 220,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 460,
+			"y": 100,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 50,
+			"y": 170,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 40,
+			"y": 310,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": false
+	},
+	{
+		"rect": {
+			"x": 181.60529,
+			"y": 443.21112,
+			"width": 22,
+			"height": 22
+		},
+		"secreta": true
+	}
+],
+"botones": [
+	{
+		"rect": {
+			"x": 320,
+			"y": 30,
+			"width": 56,
+			"height": 12
+		},
+		"id": 1,
+		"elemento": "AMBOS"
+	}
+],
+"palancas": [
+	{
+		"rect": {
+			"x": 686.6062,
+			"y": 260.89404,
+			"width": 28,
+			"height": 44
+		},
+		"id": 5,
+		"elemento": "AGUA",
+		"orden": 1,
+		"grupo": 1
+	},
+	{
+		"rect": {
+			"x": 680,
+			"y": 60,
+			"width": 28,
+			"height": 44
+		},
+		"id": 6,
+		"elemento": "FUEGO",
+		"orden": 0,
+		"grupo": 1
+	}
+],
+"puertas": [
+	{
+		"rect": {
+			"x": 393.5785,
+			"y": 294.9554,
+			"width": 20,
+			"height": 180
+		},
+		"id": 1,
+		"modo": "ALGUNA",
+		"duracion": 0,
+		"puente": false
+	},
+	{
+		"rect": {
+			"x": 1524.8159,
+			"y": 385.73843,
+			"width": 20,
+			"height": 90
+		},
+		"id": 5,
+		"modo": "ALGUNA",
+		"duracion": 0,
+		"puente": false
+	},
+	{
+		"rect": {
+			"x": 1530,
+			"y": 160,
+			"width": 20,
+			"height": 120
+		},
+		"id": 6,
+		"modo": "ALGUNA",
+		"duracion": 0,
+		"puente": false
+	}
+],
+"moviles": [],
+"cajas": [
+	{
+		"rect": {
+			"x": 171.9732,
+			"y": 381.61542,
+			"width": 40,
+			"height": 40
+		},
+		"pesada": true
+	},
+	{
+		"rect": {
+			"x": 1384.9495,
+			"y": 386.78897,
+			"width": 40,
+			"height": 40
+		},
+		"pesada": false
+	},
+	{
+		"rect": {
+			"x": 1335.6855,
+			"y": 388.39435,
+			"width": 40,
+			"height": 40
+		},
+		"pesada": false
+	},
+	{
+		"rect": {
+			"x": 1361.6052,
+			"y": 434.8166,
+			"width": 40,
+			"height": 40
+		},
+		"pesada": false
+	},
+	{
+		"rect": {
+			"x": 101.97327,
+			"y": 36.78897,
+			"width": 40,
+			"height": 40
+		},
+		"pesada": true
+	},
+	{
+		"rect": {
+			"x": 251.60547,
+			"y": 36.788925,
+			"width": 40,
+			"height": 40
+		},
+		"pesada": false
+	},
+	{
+		"rect": {
+			"x": 1340,
+			"y": 140,
+			"width": 40,
+			"height": 40
+		},
+		"pesada": false
+	},
+	{
+		"rect": {
+			"x": 1390,
+			"y": 140,
+			"width": 40,
+			"height": 40
+		},
+		"pesada": false
+	},
+	{
+		"rect": {
+			"x": 1360,
+			"y": 190,
+			"width": 40,
+			"height": 40
+		},
+		"pesada": false
+	}
+]
+}

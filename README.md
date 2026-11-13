@@ -12,7 +12,7 @@ Videojuego 2D de plataformas y puzzles cooperativo para dos jugadores, hecho con
 
 ## Caracteristicas
 
-- **10 niveles de campana** con dificultad progresiva y validacion automatica de conectividad.
+- **8 niveles de campana** con dificultad progresiva y validacion automatica de conectividad.
 - **Juego local para dos jugadores** en la misma computadora.
 - **Multijugador online directo** por LAN, reenvio de puertos o VPN (ZeroTier/Tailscale).
 - **Editor de niveles** con snapshots, deshacer/rehacer, duplicar, borrar y probar.

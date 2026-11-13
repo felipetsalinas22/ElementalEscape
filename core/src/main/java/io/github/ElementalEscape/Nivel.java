@@ -209,12 +209,9 @@ public class Nivel {
     }
 
     /**
-     * Normaliza un nivel personalizado con las medidas fijas del editor.
-     * Los bordes automaticos del escenario son la unica excepcion: conservan
-     * el ancho/alto del nivel para que el recinto siga cerrado.
-     *
-     * Las medidas no se editan desde la interfaz; esta funcion las aplica al
-     * cargar y al guardar para que el JSON tambien quede siempre normalizado.
+     * Normaliza un nivel para el editor: conserva tamaños personalizados de los
+     * objetos editables, asegura mínimos y los mantiene dentro del escenario.
+     * Los bordes automáticos del escenario son la excepción: conservan su tamaño.
      */
     public void normalizarEditor() {
         normalizar();
@@ -226,63 +223,61 @@ public class Nivel {
                 limitarRect(p.rect);
                 continue;
             }
-            if ("MURO".equalsIgnoreCase(p.estilo)) {
-                p.rect.setSize(Configuracion.ANCHO_MURO_EDITOR, Configuracion.ALTO_MURO_EDITOR);
-            } else {
-                p.rect.setSize(Configuracion.ANCHO_PLATAFORMA_EDITOR, Configuracion.ALTO_PLATAFORMA_EDITOR);
-            }
+            asegurarTamano(p.rect, 8f, 8f);
             limitarRect(p.rect);
         }
         for (Peligro p : peligros) {
             if (p == null || p.rect == null) continue;
-            p.rect.setSize(Configuracion.ANCHO_PELIGRO_EDITOR, Configuracion.ALTO_PELIGRO_EDITOR);
+            asegurarTamano(p.rect, 8f, 6f);
             limitarRect(p.rect);
         }
         for (Gema g : gemas) {
             if (g == null || g.rect == null) continue;
-            g.rect.setSize(Configuracion.ANCHO_GEMA_EDITOR, Configuracion.ALTO_GEMA_EDITOR);
+            asegurarTamano(g.rect, 10f, 10f);
             limitarRect(g.rect);
         }
         for (Boton b : botones) {
             if (b == null || b.rect == null) continue;
-            b.rect.setSize(Configuracion.ANCHO_BOTON_EDITOR, Configuracion.ALTO_BOTON_EDITOR);
+            asegurarTamano(b.rect, 16f, 8f);
             limitarRect(b.rect);
         }
         for (Palanca p : palancas) {
             if (p == null || p.rect == null) continue;
-            p.rect.setSize(Configuracion.ANCHO_PALANCA_EDITOR, Configuracion.ALTO_PALANCA_EDITOR);
+            asegurarTamano(p.rect, 12f, 12f);
             limitarRect(p.rect);
         }
         for (Puerta p : puertas) {
             if (p == null || p.rect == null) continue;
-            if (p.puente) {
-                p.rect.setSize(Configuracion.ANCHO_PUENTE_EDITOR, Configuracion.ALTO_PUENTE_EDITOR);
-            } else {
-                p.rect.setSize(Configuracion.ANCHO_PUERTA_EDITOR, Configuracion.ALTO_PUERTA_EDITOR);
-            }
+            asegurarTamano(p.rect, 8f, 8f);
             limitarRect(p.rect);
         }
         for (PlataformaMovil m : moviles) {
             if (m == null || m.rect == null) continue;
-            m.rect.setSize(Configuracion.ANCHO_MOVIL_EDITOR, Configuracion.ALTO_MOVIL_EDITOR);
+            asegurarTamano(m.rect, 16f, 8f);
             limitarRect(m.rect);
             m.finX = limitar(m.finX, 10f, Math.max(10f, ancho - 10f));
             m.finY = limitar(m.finY, 10f, Math.max(10f, alto - 10f));
         }
         for (Caja c : cajas) {
             if (c == null || c.rect == null) continue;
-            c.rect.setSize(Configuracion.ANCHO_CAJA_EDITOR, Configuracion.ALTO_CAJA_EDITOR);
+            asegurarTamano(c.rect, 12f, 12f);
             limitarRect(c.rect);
         }
 
-        salidaFuego.setSize(Configuracion.ANCHO_SALIDA_EDITOR, Configuracion.ALTO_SALIDA_EDITOR);
-        salidaAgua.setSize(Configuracion.ANCHO_SALIDA_EDITOR, Configuracion.ALTO_SALIDA_EDITOR);
+        asegurarTamano(salidaFuego, 20f, 20f);
+        asegurarTamano(salidaAgua, 20f, 20f);
         limitarRect(salidaFuego);
         limitarRect(salidaAgua);
-        origenFuegoX = limitar(origenFuegoX, 0f, Math.max(0f, ancho - Configuracion.ANCHO_ORIGEN_EDITOR));
-        origenFuegoY = limitar(origenFuegoY, 0f, Math.max(0f, alto - Configuracion.ALTO_ORIGEN_EDITOR));
-        origenAguaX = limitar(origenAguaX, 0f, Math.max(0f, ancho - Configuracion.ANCHO_ORIGEN_EDITOR));
-        origenAguaY = limitar(origenAguaY, 0f, Math.max(0f, alto - Configuracion.ALTO_ORIGEN_EDITOR));
+        origenFuegoX = limitar(origenFuegoX, 0f, Math.max(0f, ancho - Configuracion.ANCHO_PERSONAJE));
+        origenFuegoY = limitar(origenFuegoY, 0f, Math.max(0f, alto - Configuracion.ALTO_PERSONAJE));
+        origenAguaX = limitar(origenAguaX, 0f, Math.max(0f, ancho - Configuracion.ANCHO_PERSONAJE));
+        origenAguaY = limitar(origenAguaY, 0f, Math.max(0f, alto - Configuracion.ALTO_PERSONAJE));
+    }
+
+    private void asegurarTamano(Rectangle r, float minW, float minH) {
+        if (r == null) return;
+        if (Float.isNaN(r.width) || Float.isInfinite(r.width) || r.width < minW) r.width = minW;
+        if (Float.isNaN(r.height) || Float.isInfinite(r.height) || r.height < minH) r.height = minH;
     }
 
     private void limitarRect(Rectangle r) {
@@ -294,16 +289,83 @@ public class Nivel {
 
     private boolean esBorde(Plataforma p) {
         Rectangle r = p.rect;
-        float e = 0.6f;
+        float e = 2.0f;
         boolean suelo = Math.abs(r.x) < e && Math.abs(r.y) < e
-            && Math.abs(r.width - ancho) < e && Math.abs(r.height - 30f) < e;
+            && Math.abs(r.width - ancho) < e && r.height >= 16f && r.height <= 40f;
         boolean izquierda = Math.abs(r.x) < e && Math.abs(r.y) < e
-            && Math.abs(r.width - 18f) < e && Math.abs(r.height - alto) < e;
+            && r.width >= 10f && r.width <= 28f && Math.abs(r.height - alto) < e;
         boolean derecha = Math.abs(r.x + r.width - ancho) < e && Math.abs(r.y) < e
-            && Math.abs(r.width - 18f) < e && Math.abs(r.height - alto) < e;
+            && r.width >= 10f && r.width <= 28f && Math.abs(r.height - alto) < e;
         boolean techo = Math.abs(r.x) < e && Math.abs(r.y + r.height - alto) < e
-            && Math.abs(r.width - ancho) < e && Math.abs(r.height - 16f) < e;
+            && Math.abs(r.width - ancho) < e && r.height >= 10f && r.height <= 24f;
         return suelo || izquierda || derecha || techo;
+    }
+
+    /**
+     * Ajusta o crea los bordes del recinto (suelo, paredes, techo) para que
+     * coincidan con las dimensiones actuales del nivel. Conserva estilo si ya existen.
+     */
+    public void ajustarBordes() {
+        normalizar();
+        Plataforma suelo = null, izq = null, der = null, techo = null;
+        java.util.List<Plataforma> resto = new java.util.ArrayList<>();
+        for (Plataforma p : plataformas) {
+            if (p == null || p.rect == null) continue;
+            if (p.limite || esBorde(p)) {
+                Rectangle r = p.rect;
+                float e = 2.0f;
+                boolean esSuelo = Math.abs(r.x) < e && Math.abs(r.y) < e
+                    && Math.abs(r.width - ancho) < e * 4f && r.y < 10f && r.height <= 40f;
+                boolean esIzq = Math.abs(r.x) < e && Math.abs(r.y) < e && r.width <= 28f && !esSuelo;
+                boolean esDer = Math.abs(r.x + r.width - ancho) < e && r.width <= 28f && !esSuelo;
+                boolean esTecho = Math.abs(r.y + r.height - alto) < e && r.height <= 24f && !esSuelo;
+                if (esSuelo && suelo == null) suelo = p;
+                else if (esIzq && izq == null) izq = p;
+                else if (esDer && der == null) der = p;
+                else if (esTecho && techo == null) techo = p;
+                else { p.limite = true; resto.add(p); }
+            } else {
+                resto.add(p);
+            }
+        }
+        if (suelo == null) suelo = new Plataforma(0f, 0f, ancho, 30f, "PIEDRA");
+        if (izq == null) izq = new Plataforma(0f, 0f, 18f, alto, "MURO");
+        if (der == null) der = new Plataforma(ancho - 18f, 0f, 18f, alto, "MURO");
+        if (techo == null) techo = new Plataforma(0f, alto - 16f, ancho, 16f, "MURO");
+        suelo.rect.set(0f, 0f, ancho, suelo.rect.height > 0 ? Math.min(40f, Math.max(16f, suelo.rect.height)) : 30f);
+        izq.rect.set(0f, 0f, Math.min(28f, Math.max(10f, izq.rect.width > 0 ? izq.rect.width : 18f)), alto);
+        der.rect.set(ancho - Math.min(28f, Math.max(10f, der.rect.width > 0 ? der.rect.width : 18f)), 0f,
+            Math.min(28f, Math.max(10f, der.rect.width > 0 ? der.rect.width : 18f)), alto);
+        techo.rect.set(0f, alto - Math.min(24f, Math.max(10f, techo.rect.height > 0 ? techo.rect.height : 16f)), ancho,
+            Math.min(24f, Math.max(10f, techo.rect.height > 0 ? techo.rect.height : 16f)));
+        suelo.limite = izq.limite = der.limite = techo.limite = true;
+        java.util.List<Plataforma> nueva = new java.util.ArrayList<>();
+        nueva.add(suelo); nueva.add(izq); nueva.add(der); nueva.add(techo);
+        nueva.addAll(resto);
+        plataformas = nueva.toArray(new Plataforma[0]);
+    }
+
+    /** Devuelve rectangulos de objetos que quedarían total o parcialmente fuera
+     *  si el escenario pasa a nuevoAncho x nuevoAlto (excluye bordes límite). */
+    public java.util.List<String> objetosFuera(float nuevoAncho, float nuevoAlto) {
+        java.util.List<String> fuera = new java.util.ArrayList<>();
+        for (Plataforma p : plataformas) {
+            if (p == null || p.rect == null || p.limite || esBorde(p)) continue;
+            if (p.rect.x + p.rect.width > nuevoAncho + 0.5f || p.rect.y + p.rect.height > nuevoAlto + 0.5f)
+                fuera.add("Plataforma");
+        }
+        for (Peligro p : peligros) if (p != null && p.rect != null && (p.rect.x + p.rect.width > nuevoAncho + 0.5f || p.rect.y + p.rect.height > nuevoAlto + 0.5f)) fuera.add("Peligro");
+        for (Gema g : gemas) if (g != null && g.rect != null && (g.rect.x + g.rect.width > nuevoAncho + 0.5f || g.rect.y + g.rect.height > nuevoAlto + 0.5f)) fuera.add("Gema");
+        for (Boton b : botones) if (b != null && b.rect != null && (b.rect.x + b.rect.width > nuevoAncho + 0.5f || b.rect.y + b.rect.height > nuevoAlto + 0.5f)) fuera.add("Placa");
+        for (Palanca p : palancas) if (p != null && p.rect != null && (p.rect.x + p.rect.width > nuevoAncho + 0.5f || p.rect.y + p.rect.height > nuevoAlto + 0.5f)) fuera.add("Palanca");
+        for (Puerta p : puertas) if (p != null && p.rect != null && (p.rect.x + p.rect.width > nuevoAncho + 0.5f || p.rect.y + p.rect.height > nuevoAlto + 0.5f)) fuera.add("Puerta/Puente");
+        for (PlataformaMovil m : moviles) if (m != null && m.rect != null && (m.rect.x + m.rect.width > nuevoAncho + 0.5f || m.rect.y + m.rect.height > nuevoAlto + 0.5f || m.finX > nuevoAncho + 0.5f || m.finY > nuevoAlto + 0.5f)) fuera.add("Plataforma movil");
+        for (Caja c : cajas) if (c != null && c.rect != null && (c.rect.x + c.rect.width > nuevoAncho + 0.5f || c.rect.y + c.rect.height > nuevoAlto + 0.5f)) fuera.add("Caja");
+        if (origenFuegoX + Configuracion.ANCHO_PERSONAJE > nuevoAncho + 0.5f || origenFuegoY + Configuracion.ALTO_PERSONAJE > nuevoAlto + 0.5f) fuera.add("Origen Fuego");
+        if (origenAguaX + Configuracion.ANCHO_PERSONAJE > nuevoAncho + 0.5f || origenAguaY + Configuracion.ALTO_PERSONAJE > nuevoAlto + 0.5f) fuera.add("Origen Agua");
+        if (salidaFuego != null && (salidaFuego.x + salidaFuego.width > nuevoAncho + 0.5f || salidaFuego.y + salidaFuego.height > nuevoAlto + 0.5f)) fuera.add("Salida Fuego");
+        if (salidaAgua != null && (salidaAgua.x + salidaAgua.width > nuevoAncho + 0.5f || salidaAgua.y + salidaAgua.height > nuevoAlto + 0.5f)) fuera.add("Salida Agua");
+        return fuera;
     }
 
     public void agregar(Plataforma objeto) { plataformas = agregar(plataformas, objeto); }

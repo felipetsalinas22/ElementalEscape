@@ -1001,53 +1001,55 @@ public class DibujanteJuego {
     //                         HUD
     // =========================================================
 
-    public void hud(Partida p, GestorRed red, Juego juego, boolean esCliente) {
+    public void dibujarHUDSuperior(Partida p, GestorRed red, Juego juego, boolean esCliente) {
         if (p == null) return;
+        float hudH = Configuracion.ALTURA_HUD;
+        float y0 = 540f - hudH;
 
-        // Barra superior izquierda: nivel, nombre y tiempo.
-        Dibujo.panel(lote, 12f, 472f, 298f, 56f, new Color(0.04f, 0.06f, 0.11f, 0.92f),
+        Dibujo.rectangulo(lote, 0f, y0, 960f, hudH, new Color(0.03f, 0.05f, 0.09f, 0.96f));
+        Dibujo.rectangulo(lote, 0f, y0, 960f, 2f, new Color(0.30f, 0.42f, 0.58f, 0.55f));
+
+        Dibujo.panel(lote, 12f, y0 + 6f, 298f, hudH - 12f, new Color(0.04f, 0.06f, 0.11f, 0.92f),
             new Color(0.30f, 0.42f, 0.60f, 0.95f));
-        Dibujo.rectangulo(lote, 12f, 472f, 4f, 56f, Configuracion.DORADO);
+        Dibujo.rectangulo(lote, 12f, y0 + 6f, 4f, hudH - 12f, Configuracion.DORADO);
         Dibujo.texto(lote, fuente, "NIVEL " + (p.indiceNivel + 1) + "/" + Configuracion.TOTAL_NIVELES,
-            26f, 512f, Configuracion.DORADO, 0.82f);
-        Dibujo.texto(lote, fuente, p.nivel.nombre, 26f, 490f, Configuracion.TEXTO, 0.78f);
-        Dibujo.textoDerecha(lote, fuente, p.textoTiempo(), 292f, 512f, Configuracion.TEXTO_SUAVE, 0.78f);
-        Dibujo.textoDerecha(lote, fuente, Nivel.nombreTema(p.nivel.tema), 292f, 490f,
+            26f, y0 + 46f, Configuracion.DORADO, 0.82f);
+        Dibujo.texto(lote, fuente, p.nivel.nombre, 26f, y0 + 28f, Configuracion.TEXTO, 0.78f);
+        Dibujo.textoDerecha(lote, fuente, p.textoTiempo(), 292f, y0 + 46f, Configuracion.TEXTO_SUAVE, 0.78f);
+        Dibujo.textoDerecha(lote, fuente, Nivel.nombreTema(p.nivel.tema), 292f, y0 + 28f,
             new Color(0.55f, 0.72f, 0.90f, 1f), 0.62f);
 
-        // Marcador central: dos columnas con nucleo de color.
         float panelX = 318f;
-        Dibujo.panel(lote, panelX, 472f, 338f, 56f, new Color(0.04f, 0.06f, 0.11f, 0.92f),
+        Dibujo.panel(lote, panelX, y0 + 6f, 338f, hudH - 12f, new Color(0.04f, 0.06f, 0.11f, 0.92f),
             new Color(0.30f, 0.42f, 0.60f, 0.95f));
-        Dibujo.rectangulo(lote, panelX + 11f, 484f, 3f, 32f, Configuracion.FUEGO);
-        Dibujo.circulo(lote, panelX + 21f, 496f, 13f, Configuracion.FUEGO);
-        Dibujo.texto(lote, fuente, "FUEGO", panelX + 40f, 512f, Configuracion.FUEGO_CLARO, 0.68f);
+        Dibujo.rectangulo(lote, panelX + 11f, y0 + 18f, 3f, 32f, Configuracion.FUEGO);
+        Dibujo.circulo(lote, panelX + 21f, y0 + 30f, 13f, Configuracion.FUEGO);
+        Dibujo.texto(lote, fuente, "FUEGO", panelX + 40f, y0 + 46f, Configuracion.FUEGO_CLARO, 0.68f);
         Dibujo.textoDerecha(lote, fuente, String.valueOf(p.puntuacion.puntosFuego),
-            panelX + 152f, 512f, Configuracion.TEXTO, 0.88f);
-        Dibujo.texto(lote, fuente, "gemas " + p.puntuacion.gemasFuego, panelX + 40f, 489f,
+            panelX + 152f, y0 + 46f, Configuracion.TEXTO, 0.88f);
+        Dibujo.texto(lote, fuente, "gemas " + p.puntuacion.gemasFuego, panelX + 40f, y0 + 27f,
             Configuracion.TEXTO_SUAVE, 0.60f);
-        Dibujo.texto(lote, fuente, "vidas " + p.vidasFuego, panelX + 112f, 489f,
+        Dibujo.texto(lote, fuente, "vidas " + p.vidasFuego, panelX + 112f, y0 + 27f,
             Configuracion.TEXTO_SUAVE, 0.60f);
 
-        Dibujo.linea(lote, panelX + 169f, 480f, panelX + 169f, 522f, 1f,
+        Dibujo.linea(lote, panelX + 169f, y0 + 14f, panelX + 169f, y0 + 56f, 1f,
             new Color(0.35f, 0.42f, 0.58f, 0.35f));
 
-        Dibujo.rectangulo(lote, panelX + 179f, 484f, 3f, 32f, Configuracion.AGUA);
-        Dibujo.circulo(lote, panelX + 189f, 496f, 13f, Configuracion.AGUA);
-        Dibujo.texto(lote, fuente, "AGUA", panelX + 208f, 512f, Configuracion.AGUA_CLARA, 0.68f);
+        Dibujo.rectangulo(lote, panelX + 179f, y0 + 18f, 3f, 32f, Configuracion.AGUA);
+        Dibujo.circulo(lote, panelX + 189f, y0 + 30f, 13f, Configuracion.AGUA);
+        Dibujo.texto(lote, fuente, "AGUA", panelX + 208f, y0 + 46f, Configuracion.AGUA_CLARA, 0.68f);
         Dibujo.textoDerecha(lote, fuente, String.valueOf(p.puntuacion.puntosAgua),
-            panelX + 320f, 512f, Configuracion.TEXTO, 0.88f);
-        Dibujo.texto(lote, fuente, "gemas " + p.puntuacion.gemasAgua, panelX + 208f, 489f,
+            panelX + 320f, y0 + 46f, Configuracion.TEXTO, 0.88f);
+        Dibujo.texto(lote, fuente, "gemas " + p.puntuacion.gemasAgua, panelX + 208f, y0 + 27f,
             Configuracion.TEXTO_SUAVE, 0.60f);
-        Dibujo.texto(lote, fuente, "vidas " + p.vidasAgua, panelX + 280f, 489f,
+        Dibujo.texto(lote, fuente, "vidas " + p.vidasAgua, panelX + 280f, y0 + 27f,
             Configuracion.TEXTO_SUAVE, 0.60f);
 
-        // Panel derecho: gemas, red y pausa.
-        Dibujo.panel(lote, 666f, 472f, 282f, 56f, new Color(0.04f, 0.06f, 0.11f, 0.92f),
+        Dibujo.panel(lote, 666f, y0 + 6f, 282f, hudH - 12f, new Color(0.04f, 0.06f, 0.11f, 0.92f),
             new Color(0.30f, 0.42f, 0.60f, 0.95f));
-        Dibujo.rectangulo(lote, 944f, 472f, 4f, 56f, Configuracion.VERDE);
+        Dibujo.rectangulo(lote, 944f, y0 + 6f, 4f, hudH - 12f, Configuracion.VERDE);
         Dibujo.texto(lote, fuente, "GEMAS " + p.gemasRecogidas() + "/" + p.nivel.gemas.length,
-            680f, 512f, Configuracion.TEXTO, 0.76f);
+            680f, y0 + 46f, Configuracion.TEXTO, 0.76f);
         String redTexto = "LOCAL";
         Color redColor = Configuracion.VERDE;
         if (red != null) {
@@ -1059,24 +1061,27 @@ public class DibujanteJuego {
                 redColor = red.conectado ? Configuracion.VERDE : Configuracion.ROJO;
             }
         }
-        Dibujo.texto(lote, fuente, redTexto, 680f, 489f, redColor, 0.60f);
-        Dibujo.textoDerecha(lote, fuente, "ESC pausa", 934f, 512f, Configuracion.TEXTO_SUAVE, 0.58f);
+        Dibujo.texto(lote, fuente, redTexto, 680f, y0 + 27f, redColor, 0.60f);
+        Dibujo.textoDerecha(lote, fuente, "ESC pausa", 934f, y0 + 46f, Configuracion.TEXTO_SUAVE, 0.58f);
         Dibujo.textoDerecha(lote, fuente, esCliente ? "Tu: Agua"
             : (red != null && red.modo == GestorRed.Modo.LOCAL ? "2 jugadores" : "Tu: Fuego"),
-            934f, 489f, Configuracion.TEXTO_SUAVE, 0.58f);
+            934f, y0 + 27f, Configuracion.TEXTO_SUAVE, 0.58f);
 
-        // Mensaje central inferior y pista del nivel.
         if (p.mensaje != null && !p.mensaje.isEmpty() && p.mensajeTiempo > 0f) {
             float ancho = Math.min(620f, Dibujo.anchoTexto(fuente, p.mensaje, 0.85f) + 50f);
-            Dibujo.panel(lote, 480f - ancho / 2f, 66f, ancho, 34f,
+            Dibujo.panel(lote, 480f - ancho / 2f, 8f, ancho, 34f,
                 new Color(0.04f, 0.06f, 0.11f, 0.94f), new Color(0.38f, 0.52f, 0.72f, 0.95f));
-            Dibujo.rectangulo(lote, 480f - ancho / 2f + 10f, 70f, 3f, 26f, Configuracion.DORADO);
-            Dibujo.textoCentrado(lote, fuente, p.mensaje, 480f, 89f, Configuracion.TEXTO, 0.85f);
+            Dibujo.rectangulo(lote, 480f - ancho / 2f + 10f, 12f, 3f, 26f, Configuracion.DORADO);
+            Dibujo.textoCentrado(lote, fuente, p.mensaje, 480f, 31f, Configuracion.TEXTO, 0.85f);
         }
         if (p.nivel.pista != null && !p.nivel.pista.isEmpty()) {
-            Dibujo.textoCentrado(lote, fuente, p.nivel.pista, 480f, 28f,
+            Dibujo.textoCentrado(lote, fuente, p.nivel.pista, 480f, 52f,
                 new Color(0.72f, 0.82f, 0.96f, 0.88f), 0.66f);
         }
+    }
+
+    public void hud(Partida p, GestorRed red, Juego juego, boolean esCliente) {
+        dibujarHUDSuperior(p, red, juego, esCliente);
     }
 
     public void textoCentrado(String texto, float x, float y, Color color, float escala) {

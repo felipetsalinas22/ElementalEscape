@@ -133,8 +133,15 @@ public class PantallaNiveles extends PantallaBase {
             if (desbloqueado) {
                 Dibujo.texto(lote, fuente, "JUGAR", x + 10f, y + 16f, Configuracion.VERDE, 0.62f);
                 if (zonaClic(x, y, ancho, alto)) {
-                    cambiarPantalla(PantallaJuego.nivelSuelto(juego,
-                        NivelesIntegrados.crear(i), i, true));
+                    try {
+                        Nivel nivelParaJugar = juego.getGestorNiveles().cargarConSuperposicion(
+                            NivelesIntegrados.nombre(i));
+                        cambiarPantalla(PantallaJuego.nivelSuelto(juego, nivelParaJugar, i, true));
+                    } catch (Exception e) {
+                        // Si falla la superposicion, usar el integrado directamente
+                        cambiarPantalla(PantallaJuego.nivelSuelto(juego,
+                            NivelesIntegrados.crear(i), i, true));
+                    }
                 }
             }
         }

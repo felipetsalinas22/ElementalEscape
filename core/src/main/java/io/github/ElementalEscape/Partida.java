@@ -118,7 +118,9 @@ public class Partida {
         this.fuego = new Jugador(Jugador.Tipo.FUEGO, nivel.origenFuegoX, nivel.origenFuegoY);
         this.agua = new Jugador(Jugador.Tipo.AGUA, nivel.origenAguaX, nivel.origenAguaY);
         this.fuego.anchoMundoActual = nivel.ancho;
+        this.fuego.altoMundoActual = nivel.alto;
         this.agua.anchoMundoActual = nivel.ancho;
+        this.agua.altoMundoActual = nivel.alto;
         this.puntuacion = new Puntuacion(nivel.gemas.length);
 
         gemasTomadas = new boolean[nivel.gemas.length];
@@ -145,7 +147,9 @@ public class Partida {
         fuego.vivo = true;
         agua.vivo = true;
         fuego.anchoMundoActual = nivel.ancho;
+        fuego.altoMundoActual = nivel.alto;
         agua.anchoMundoActual = nivel.ancho;
+        agua.altoMundoActual = nivel.alto;
         vidasFuego = Configuracion.VIDAS_INICIALES;
         vidasAgua = Configuracion.VIDAS_INICIALES;
         for (int i = 0; i < gemasTomadas.length; i++) gemasTomadas[i] = false;
@@ -870,6 +874,7 @@ public class Partida {
         p.actualizar(dt, entrada.izquierda, entrada.derecha, entrada.saltoMantenido,
             entrada.saltoPresionado, solidosJugador);
         p.anchoMundoActual = nivel.ancho;
+        p.altoMundoActual = nivel.alto;
     }
 
     private static boolean[] copiar(boolean[] original) {

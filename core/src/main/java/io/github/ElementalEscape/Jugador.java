@@ -198,9 +198,14 @@ public class Jugador {
 
         if (x < 0f) x = 0f;
         if (x > anchoMundoActual - ancho) x = Math.max(0f, anchoMundoActual - ancho);
+        if (y + alto > altoMundoActual) {
+            y = Math.max(0f, altoMundoActual - alto);
+            if (velY > 0f) velY = 0f;
+        }
         if (y < -90f) morir();
     }
 
     // Se ajusta al cargar un nivel de distinto tamano.
     public transient float anchoMundoActual = Configuracion.ANCHO_MUNDO;
+    public transient float altoMundoActual = Configuracion.ALTO_MUNDO;
 }

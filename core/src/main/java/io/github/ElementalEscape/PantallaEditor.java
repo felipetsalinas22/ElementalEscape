@@ -11,6 +11,8 @@ import com.badlogic.gdx.utils.JsonWriter;
 import com.badlogic.gdx.utils.ScreenUtils;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -61,6 +63,10 @@ public class PantallaEditor extends PantallaBase {
     private float mundoX;
     private float mundoY;
 
+    private static final float HUD_H = Configuracion.ALTURA_HUD;
+    private static final float VISTA_W = Configuracion.ANCHO_VISTA_JUEGO;
+    private static final float VISTA_H = Configuracion.ALTO_VISTA_JUEGO;
+
     private Herramienta herramienta = Herramienta.SELECCION;
     private TipoSeleccion tipoSel = TipoSeleccion.NINGUNO;
     private int indiceSel = -1;
@@ -78,9 +84,14 @@ public class PantallaEditor extends PantallaBase {
 
     private String estado = "Editor listo. Elige una herramienta o selecciona un objeto.";
     private String confirmar = "";
+    private float pendienteAncho;
+    private float pendienteAlto;
+    private int pendientesFueraCount;
     private boolean selectorAbierto = false;
+    private boolean esNivelHistoria = false;
     private List<GestorNiveles.Entrada> listaNiveles = new ArrayList<>();
     private int paginaSelector = 0;
+    private int pestanaSelector = 0; // 0 = Mis niveles, 1 = Historia
 
     public PantallaEditor(Juego juego, Nivel nivelInicial) {
         super(juego);
@@ -119,10 +130,12 @@ public class PantallaEditor extends PantallaBase {
         if (nivelInicial == null) {
             nivel = nivelNuevo();
             archivoActual = "";
+            esNivelHistoria = false;
         } else {
             nivel = nivelInicial;
             nivel.normalizarEditor();
             archivoActual = archivoRestaurar != null ? archivoRestaurar : buscarArchivo(nivel);
+            esNivelHistoria = archivoActual.isEmpty() && nivelInicial != null;
         }
         encuadrarNivel();
         if (historialRestaurar != null && !historialRestaurar.isEmpty()) {
@@ -188,8 +201,9 @@ public class PantallaEditor extends PantallaBase {
     @Override
     protected void actualizar(float delta) {
         tiempo += delta;
-        mundoX = camX + (ui.mouseX - 480f) * zoom;
-        mundoY = camY + (ui.mouseY - 270f) * zoom;
+        float localY = MathUtils.clamp(ui.mouseY, 0f, VISTA_H);
+        mundoX = camX + (ui.mouseX - VISTA_W / 2f) * zoom;
+        mundoY = camY + (localY - VISTA_H / 2f) * zoom;
 
         if (selectorAbierto || !confirmar.isEmpty()) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
@@ -312,8 +326,12 @@ public class PantallaEditor extends PantallaBase {
     }
 
     private void limitarCamara() {
-        camX = MathUtils.clamp(camX, -100f, nivel.ancho + 100f);
-        camY = MathUtils.clamp(camY, -50f, nivel.alto + 50f);
+        float hx = VISTA_W * zoom / 2f;
+        float hy = VISTA_H * zoom / 2f;
+        if (nivel.ancho <= hx * 2f) camX = nivel.ancho / 2f;
+        else camX = MathUtils.clamp(camX, hx, nivel.ancho - hx);
+        if (nivel.alto <= hy * 2f) camY = nivel.alto / 2f;
+        else camY = MathUtils.clamp(camY, hy, nivel.alto - hy);
     }
 
     private void cambiarZoom(float factor) {
@@ -322,12 +340,13 @@ public class PantallaEditor extends PantallaBase {
     }
 
     private void encuadrarNivel() {
+        float ajuste = Math.min(VISTA_W / Math.max(1f, nivel.ancho),
+            VISTA_H / Math.max(1f, nivel.alto));
+        zoom = MathUtils.clamp(ajuste, 0.25f, 3f);
         camX = nivel.ancho / 2f;
         camY = nivel.alto / 2f;
-        float ajuste = Math.min(960f / Math.max(1f, nivel.ancho),
-            540f / Math.max(1f, nivel.alto));
-        zoom = MathUtils.clamp(ajuste, 0.30f, 1.2f);
         limitarCamara();
+        estado = "Vista general. F encuadra, +/- ajusta el zoom.";
     }
 
     // =========================================================
@@ -760,15 +779,20 @@ public class PantallaEditor extends PantallaBase {
         try {
             nivel.normalizarEditor();
             GestorNiveles gestor = juego.getGestorNiveles();
-            if (archivoActual.isEmpty()) {
+            if (esNivelHistoria || archivoActual.isEmpty()) {
+                // Nivel de historia o nuevo: guardar en carpeta de usuario
                 String existente = gestor.archivoConNombre(nivel.nombre);
                 if (!existente.isEmpty() && !permitirSobrescribir) {
-                    estado = "Ya existe un nivel llamado \"" + nivel.nombre
-                        + "\". Confirma para sobrescribirlo o cambia el nombre.";
+                    estado = "Ya existe \"" + nivel.nombre + "\". Sobrescribe o cambia el nombre.";
                     confirmar = "SOBRESCRIBIR";
                     return;
                 }
+                boolean eraHistoria = esNivelHistoria;
                 archivoActual = gestor.guardar(nivel, permitirSobrescribir);
+                esNivelHistoria = false;
+                if (eraHistoria) {
+                    estado = "Guardado como " + archivoActual + ". La campaña usará esta versión.";
+                }
             } else {
                 String otro = gestor.archivoConNombre(nivel.nombre);
                 if (!otro.isEmpty() && !otro.equalsIgnoreCase(archivoActual)) {
@@ -852,8 +876,9 @@ public class PantallaEditor extends PantallaBase {
     }
 
     private void abrirSelectorAhora() {
-        listaNiveles = juego.getGestorNiveles().listar();
+        recargarListaSelector();
         paginaSelector = 0;
+        pestanaSelector = 0;
         selectorAbierto = true;
         confirmar = "";
     }
@@ -864,17 +889,30 @@ public class PantallaEditor extends PantallaBase {
             return;
         }
         try {
-            nivel = juego.getGestorNiveles().cargar(entrada.archivo);
-            archivoActual = entrada.archivo;
+            if (entrada.archivo != null && entrada.archivo.startsWith("HISTORIA:")) {
+                // Nivel de la historia: cargar como copia editable
+                Nivel copia = json.fromJson(Nivel.class, json.toJson(entrada.nivel));
+                if (copia == null) throw new IOException("No se pudo copiar el nivel de la historia.");
+                copia.normalizarEditor();
+                nivel = copia;
+                archivoActual = "";
+                esNivelHistoria = true;
+                estado = "Historia \"" + recortar(copia.nombre, 24) + "\" cargada. Guardar crea copia para campaña.";
+            } else {
+                nivel = juego.getGestorNiveles().cargar(entrada.archivo);
+                archivoActual = entrada.archivo;
+                esNivelHistoria = false;
+                estado = "Cargado: " + recortar(nivel.nombre, 28) + " (" + archivoActual + ").";
+            }
             tipoSel = TipoSeleccion.NINGUNO;
             indiceSel = -1;
             sucio = false;
             selectorAbierto = false;
+            confirmar = "";
             encuadrarNivel();
             reiniciarHistorial();
-            estado = "Cargado " + archivoActual + ".";
-        } catch (IOException e) {
-            estado = e.getMessage();
+        } catch (Exception e) {
+            estado = e.getMessage() == null ? "No se pudo cargar el nivel." : e.getMessage();
         }
     }
 
@@ -992,48 +1030,128 @@ public class PantallaEditor extends PantallaBase {
         }
     }
 
-    private void dibujarPropiedadesNivel(float y) {
-        Dibujo.texto(lote, fuente, "PROPIEDADES DEL NIVEL", 752f, 486f, Configuracion.DORADO, 0.72f);
-        Dibujo.texto(lote, fuente, recortar(nivel.nombre, 24), 752f, 462f,
-            Configuracion.TEXTO, 0.68f);
-        y = 438f;
-        if (ui.boton("EDITAR NOMBRE", 752f, y - 8f, 188f, 28f)) {
+    private void dibujarPropiedadesNivel(float yTop) {
+        Dibujo.texto(lote, fuente, "DATOS DEL NIVEL", 752f, 486f, Configuracion.DORADO, 0.72f);
+        float y = 458f;
+
+        // Nombre
+        Dibujo.texto(lote, fuente, "NOMBRE", 752f, y, Configuracion.TEXTO_SUAVE, 0.54f);
+        Dibujo.panel(lote, 750f, y - 32f, 192f, 26f, new Color(0.08f, 0.10f, 0.16f, 0.98f),
+            new Color(0.28f, 0.38f, 0.54f, 1f));
+        Dibujo.texto(lote, fuente, recortar(nivel.nombre, 24), 758f, y - 15f, Configuracion.TEXTO, 0.62f);
+        if (ui.boton("CAMBIAR", 750f, y - 62f, 192f, 24f)) {
             pedirTexto("Nombre del nivel", nivel.nombre, new CambioTexto() {
                 @Override public void aplicar(String texto) {
                     nivel.nombre = texto.trim().isEmpty() ? "Nuevo nivel" : texto.trim();
                     confirmarCambio();
+                    estado = "Nombre actualizado.";
                 }
             });
         }
-        y -= 34f;
-        if (ui.boton("EDITAR PISTA", 752f, y - 8f, 188f, 28f)) {
-            pedirTexto("Pista del nivel", nivel.pista, new CambioTexto() {
-                @Override public void aplicar(String texto) { nivel.pista = texto; confirmarCambio(); }
-            });
-        }
-        y -= 34f;
-        if (ui.boton("AUTOR: " + recortar(nivel.autor, 14), 752f, y - 8f, 188f, 28f)) {
+        y -= 72f;
+
+        // Autor
+        Dibujo.texto(lote, fuente, "AUTOR", 752f, y, Configuracion.TEXTO_SUAVE, 0.54f);
+        Dibujo.panel(lote, 750f, y - 32f, 192f, 26f, new Color(0.08f, 0.10f, 0.16f, 0.98f),
+            new Color(0.28f, 0.38f, 0.54f, 1f));
+        Dibujo.texto(lote, fuente, recortar(nivel.autor == null ? "" : nivel.autor, 24), 758f, y - 15f,
+            Configuracion.TEXTO, 0.62f);
+        if (ui.boton("CAMBIAR", 750f, y - 62f, 192f, 24f)) {
             pedirTexto("Autor del nivel", nivel.autor, new CambioTexto() {
-                @Override public void aplicar(String texto) { nivel.autor = texto; confirmarCambio(); }
+                @Override public void aplicar(String texto) {
+                    nivel.autor = texto == null ? "" : texto.trim();
+                    confirmarCambio();
+                    estado = "Autor actualizado.";
+                }
             });
         }
-        y -= 34f;
-        filaCiclo("TEMA", nivel.tema, y, new Runnable() {
-            @Override public void run() { nivel.tema = siguienteTema(nivel.tema); }
+        y -= 72f;
+
+        // Pista
+        Dibujo.texto(lote, fuente, "PISTA", 752f, y, Configuracion.TEXTO_SUAVE, 0.54f);
+        Dibujo.panel(lote, 750f, y - 32f, 192f, 26f, new Color(0.08f, 0.10f, 0.16f, 0.98f),
+            new Color(0.28f, 0.38f, 0.54f, 1f));
+        Dibujo.texto(lote, fuente, recortar(nivel.pista == null ? "" : nivel.pista, 24), 758f, y - 15f,
+            Configuracion.TEXTO, 0.58f);
+        if (ui.boton("CAMBIAR", 750f, y - 62f, 192f, 24f)) {
+            pedirTexto("Pista del nivel", nivel.pista, new CambioTexto() {
+                @Override public void aplicar(String texto) {
+                    nivel.pista = texto == null ? "" : texto;
+                    confirmarCambio();
+                    estado = "Pista actualizada.";
+                }
+            });
+        }
+        y -= 72f;
+
+        // Tema
+        Dibujo.texto(lote, fuente, "TEMA", 752f, y, Configuracion.TEXTO_SUAVE, 0.54f);
+        Dibujo.panel(lote, 750f, y - 32f, 192f, 26f, new Color(0.08f, 0.10f, 0.16f, 0.98f),
+            new Color(0.28f, 0.38f, 0.54f, 1f));
+        Dibujo.texto(lote, fuente, Nivel.nombreTema(nivel.tema), 758f, y - 15f, Configuracion.TEXTO, 0.60f);
+        if (ui.boton("<  " + nivel.tema + "  >", 750f, y - 62f, 192f, 24f)) {
+            nivel.tema = siguienteTema(nivel.tema);
+            confirmarCambio();
+            estado = "Tema: " + Nivel.nombreTema(nivel.tema);
+        }
+        y -= 74f;
+
+        Dibujo.texto(lote, fuente, "ESCENARIO", 752f, y, Configuracion.TEXTO_SUAVE, 0.54f);
+        y -= 22f;
+        filaNumero("ANCHO", nivel.ancho, y, 40f, new Ajuste() {
+            @Override public void cambiar(float d) { cambiarAnchoNivel(d); }
         });
         y -= 30f;
-        Dibujo.texto(lote, fuente, "ESCENARIO ESTANDAR", 752f, y,
-            Configuracion.TEXTO_SUAVE, 0.60f);
-        y -= 18f;
-        Dibujo.texto(lote, fuente, "Medidas fijas por tipo de objeto.", 752f, y,
-            Configuracion.TEXTO_SUAVE, 0.56f);
-        y -= 26f;
-        Dibujo.texto(lote, fuente, "Elige una herramienta y", 752f, y,
-            Configuracion.TEXTO_SUAVE, 0.60f);
-        Dibujo.texto(lote, fuente, "haz clic en el area para colocar.", 752f, y - 18f,
-            Configuracion.TEXTO_SUAVE, 0.60f);
-        Dibujo.texto(lote, fuente, "Arrastra el objeto para moverlo.", 752f, y - 36f,
-            Configuracion.TEXTO_SUAVE, 0.56f);
+        filaNumero("ALTO", nivel.alto, y, 40f, new Ajuste() {
+            @Override public void cambiar(float d) { cambiarAltoNivel(d); }
+        });
+        y -= 34f;
+
+        if (esNivelHistoria || archivoActual.startsWith("HISTORIA:")) {
+            Dibujo.texto(lote, fuente, "Nivel de historia", 752f, y, Configuracion.DORADO, 0.58f);
+            Dibujo.texto(lote, fuente, "Al guardar crea copia editable", 752f, y - 16f, Configuracion.TEXTO_SUAVE, 0.50f);
+            y -= 28f;
+        } else if (!archivoActual.isEmpty()) {
+            Dibujo.texto(lote, fuente, "Archivo: " + recortar(archivoActual, 18), 752f, y, Configuracion.TEXTO_SUAVE, 0.50f);
+            y -= 14f;
+        }
+        Dibujo.texto(lote, fuente, "F encuadra, +/- zoom", 752f, y - 6f, Configuracion.TEXTO_SUAVE, 0.52f);
+        Dibujo.texto(lote, fuente, "HUD fijo, mundo debajo", 752f, y - 20f, Configuracion.TEXTO_SUAVE, 0.52f);
+    }
+
+
+    private void cambiarAnchoNivel(float d) {
+        float nuevo = MathUtils.clamp(nivel.ancho + d, Configuracion.ANCHO_MINIMO_NIVEL, Configuracion.ANCHO_MAXIMO_NIVEL);
+        aplicarTamanoNivel(nuevo, nivel.alto);
+    }
+
+    private void cambiarAltoNivel(float d) {
+        float nuevo = MathUtils.clamp(nivel.alto + d, Configuracion.ALTO_MINIMO_NIVEL, Configuracion.ALTO_MAXIMO_NIVEL);
+        aplicarTamanoNivel(nivel.ancho, nuevo);
+    }
+
+    private void aplicarTamanoNivel(float nuevoAncho, float nuevoAlto) {
+        if (Math.abs(nuevoAncho - nivel.ancho) < 0.01f && Math.abs(nuevoAlto - nivel.alto) < 0.01f) return;
+        java.util.List<String> fuera = nivel.objetosFuera(nuevoAncho, nuevoAlto);
+        if (fuera != null && !fuera.isEmpty()) {
+            pendienteAncho = nuevoAncho;
+            pendienteAlto = nuevoAlto;
+            pendientesFueraCount = fuera.size();
+            confirmar = "REDIMENSIONAR";
+            return;
+        }
+        ejecutarRedimension(nuevoAncho, nuevoAlto, false);
+    }
+
+    private void ejecutarRedimension(float nuevoAncho, float nuevoAlto, boolean reubico) {
+        nivel.ancho = nuevoAncho;
+        nivel.alto = nuevoAlto;
+        nivel.ajustarBordes();
+        nivel.normalizarEditor();
+        encuadrarNivel();
+        confirmarCambio();
+        estado = "Escenario " + Math.round(nivel.ancho) + "x" + Math.round(nivel.alto)
+            + (reubico ? ". Objetos reubicados." : ".");
     }
 
     private void dibujarPropiedadesPlataforma(float y) {
@@ -1048,6 +1166,7 @@ public class PantallaEditor extends PantallaBase {
             return;
         }
         y = filaPosicion(o.rect, 458f);
+        y = filaTamano(o.rect, y, 8f, 8f);
         if ("MURO".equalsIgnoreCase(o.estilo)) {
             Dibujo.texto(lote, fuente, "ESTILO: MURO", 752f, y,
                 Configuracion.TEXTO_SUAVE, 0.64f);
@@ -1067,6 +1186,7 @@ public class PantallaEditor extends PantallaBase {
         Nivel.Peligro o = nivel.peligros[indiceSel];
         Dibujo.texto(lote, fuente, "PELIGRO", 752f, 486f, Configuracion.DORADO, 0.72f);
         y = filaPosicion(o.rect, 458f);
+        y = filaTamano(o.rect, y, 8f, 6f);
         filaToggle("ES LAVA", o.lava, y, new AjusteBooleano() {
             @Override public void cambiar(boolean v) { o.lava = v; }
         });
@@ -1083,6 +1203,7 @@ public class PantallaEditor extends PantallaBase {
         Nivel.Gema o = nivel.gemas[indiceSel];
         Dibujo.texto(lote, fuente, "GEMA", 752f, 486f, Configuracion.DORADO, 0.72f);
         y = filaPosicion(o.rect, 458f);
+        y = filaTamano(o.rect, y, 10f, 10f);
         filaToggle("SECRETA", o.secreta, y, new AjusteBooleano() {
             @Override public void cambiar(boolean v) { o.secreta = v; }
         });
@@ -1096,6 +1217,7 @@ public class PantallaEditor extends PantallaBase {
         Nivel.Boton o = nivel.botones[indiceSel];
         Dibujo.texto(lote, fuente, "PLACA DE PRESION", 752f, 486f, Configuracion.DORADO, 0.72f);
         y = filaPosicion(o.rect, 458f);
+        y = filaTamano(o.rect, y, 16f, 8f);
         filaNumero("ID", o.id, y, 1f, new Ajuste() {
             @Override public void cambiar(float d) { o.id = Math.max(1, Math.round(o.id + d)); }
         });
@@ -1113,6 +1235,7 @@ public class PantallaEditor extends PantallaBase {
         Nivel.Palanca o = nivel.palancas[indiceSel];
         Dibujo.texto(lote, fuente, "PALANCA", 752f, 486f, Configuracion.DORADO, 0.72f);
         y = filaPosicion(o.rect, 458f);
+        y = filaTamano(o.rect, y, 12f, 12f);
         filaNumero("ID", o.id, y, 1f, new Ajuste() {
             @Override public void cambiar(float d) { o.id = Math.max(1, Math.round(o.id + d)); }
         });
@@ -1139,6 +1262,7 @@ public class PantallaEditor extends PantallaBase {
         Dibujo.texto(lote, fuente, o.puente ? "PUENTE DE ENERGIA" : "PUERTA",
             752f, 486f, Configuracion.DORADO, 0.72f);
         y = filaPosicion(o.rect, 458f);
+        y = filaTamano(o.rect, y, 8f, 8f);
         filaNumero("ID", o.id, y, 1f, new Ajuste() {
             @Override public void cambiar(float d) { o.id = Math.max(1, Math.round(o.id + d)); }
         });
@@ -1152,13 +1276,7 @@ public class PantallaEditor extends PantallaBase {
         });
         y -= 30f;
         filaToggle("ES PUENTE", o.puente, y, new AjusteBooleano() {
-            @Override public void cambiar(boolean v) {
-                o.puente = v;
-                if (v) o.rect.setSize(Configuracion.ANCHO_PUENTE_EDITOR, Configuracion.ALTO_PUENTE_EDITOR);
-                else o.rect.setSize(Configuracion.ANCHO_PUERTA_EDITOR, Configuracion.ALTO_PUERTA_EDITOR);
-                o.rect.x = MathUtils.clamp(o.rect.x, 0f, Math.max(0f, nivel.ancho - o.rect.width));
-                o.rect.y = MathUtils.clamp(o.rect.y, 0f, Math.max(0f, nivel.alto - o.rect.height));
-            }
+            @Override public void cambiar(boolean v) { o.puente = v; }
         });
         y -= 38f;
         if (ui.botonColor("ELIMINAR", 752f, y - 8f, 188f, 28f, Configuracion.ROJO)) {
@@ -1170,6 +1288,7 @@ public class PantallaEditor extends PantallaBase {
         Nivel.PlataformaMovil o = nivel.moviles[indiceSel];
         Dibujo.texto(lote, fuente, "PLATAFORMA MOVIL", 752f, 486f, Configuracion.DORADO, 0.72f);
         y = filaPosicion(o.rect, 458f);
+        y = filaTamano(o.rect, y, 16f, 8f);
         filaNumero("FIN X", o.finX, y, pasoEdicion(), new Ajuste() {
             @Override public void cambiar(float d) {
                 o.finX = MathUtils.clamp(o.finX + d, 10f, nivel.ancho - 10f);
@@ -1199,6 +1318,7 @@ public class PantallaEditor extends PantallaBase {
         Nivel.Caja o = nivel.cajas[indiceSel];
         Dibujo.texto(lote, fuente, "CAJA", 752f, 486f, Configuracion.DORADO, 0.72f);
         y = filaPosicion(o.rect, 458f);
+        y = filaTamano(o.rect, y, 12f, 12f);
         filaToggle("PESADA", o.pesada, y, new AjusteBooleano() {
             @Override public void cambiar(boolean v) { o.pesada = v; }
         });
@@ -1218,15 +1338,19 @@ public class PantallaEditor extends PantallaBase {
             y = 458f;
             filaNumero("X", fuego ? nivel.origenFuegoX : nivel.origenAguaX, y, pasoEdicion(), new Ajuste() {
                 @Override public void cambiar(float d) {
-                    if (fuego) nivel.origenFuegoX = MathUtils.clamp(nivel.origenFuegoX + d, 0f, nivel.ancho - 30f);
-                    else nivel.origenAguaX = MathUtils.clamp(nivel.origenAguaX + d, 0f, nivel.ancho - 30f);
+                    if (fuego) nivel.origenFuegoX = MathUtils.clamp(nivel.origenFuegoX + d, 0f,
+                        Math.max(0f, nivel.ancho - Configuracion.ANCHO_PERSONAJE));
+                    else nivel.origenAguaX = MathUtils.clamp(nivel.origenAguaX + d, 0f,
+                        Math.max(0f, nivel.ancho - Configuracion.ANCHO_PERSONAJE));
                 }
             });
             y -= 30f;
             filaNumero("Y", fuego ? nivel.origenFuegoY : nivel.origenAguaY, y, pasoEdicion(), new Ajuste() {
                 @Override public void cambiar(float d) {
-                    if (fuego) nivel.origenFuegoY = MathUtils.clamp(nivel.origenFuegoY + d, 0f, nivel.alto - 46f);
-                    else nivel.origenAguaY = MathUtils.clamp(nivel.origenAguaY + d, 0f, nivel.alto - 46f);
+                    if (fuego) nivel.origenFuegoY = MathUtils.clamp(nivel.origenFuegoY + d, 0f,
+                        Math.max(0f, nivel.alto - Configuracion.ALTO_PERSONAJE));
+                    else nivel.origenAguaY = MathUtils.clamp(nivel.origenAguaY + d, 0f,
+                        Math.max(0f, nivel.alto - Configuracion.ALTO_PERSONAJE));
                 }
             });
             y -= 34f;
@@ -1235,6 +1359,7 @@ public class PantallaEditor extends PantallaBase {
         } else {
             Rectangle r = tipoSel == TipoSeleccion.SALIDA_FUEGO ? nivel.salidaFuego : nivel.salidaAgua;
             y = filaPosicion(r, 458f);
+            y = filaTamano(r, y, 20f, 20f);
             Dibujo.texto(lote, fuente, "La salida debe quedar libre.", 752f, y,
                 Configuracion.TEXTO_SUAVE, 0.58f);
         }
@@ -1250,6 +1375,27 @@ public class PantallaEditor extends PantallaBase {
         filaNumero("Y", r.y, y, pasoEdicion(), new Ajuste() {
             @Override public void cambiar(float d) {
                 r.y = MathUtils.clamp(r.y + d, 0f, Math.max(0f, nivel.alto - r.height));
+            }
+        });
+        return y - 34f;
+    }
+
+    private float filaTamano(Rectangle r, float y, float minW, float minH) {
+        filaNumero("ANCHO", r.width, y, pasoEdicion(), new Ajuste() {
+            @Override public void cambiar(float d) {
+                float nuevo = Math.max(minW, r.width + d);
+                nuevo = Math.min(nuevo, Math.max(minW, nivel.ancho - r.x));
+                r.width = nuevo;
+                r.x = MathUtils.clamp(r.x, 0f, Math.max(0f, nivel.ancho - r.width));
+            }
+        });
+        y -= 30f;
+        filaNumero("ALTO", r.height, y, pasoEdicion(), new Ajuste() {
+            @Override public void cambiar(float d) {
+                float nuevo = Math.max(minH, r.height + d);
+                nuevo = Math.min(nuevo, Math.max(minH, nivel.alto - r.y));
+                r.height = nuevo;
+                r.y = MathUtils.clamp(r.y, 0f, Math.max(0f, nivel.alto - r.height));
             }
         });
         return y - 34f;
@@ -1283,9 +1429,15 @@ public class PantallaEditor extends PantallaBase {
     // =========================================================
 
     @Override
+    protected void alRedimensionar(int ancho, int alto) {
+        super.alRedimensionar(ancho, alto);
+    }
+
+    @Override
     protected void dibujar(float delta) {
         ScreenUtils.clear(0.020f, 0.028f, 0.055f, 1f);
 
+        aplicarVistaMundo();
         camara.position.set(camX, camY, 0f);
         camara.zoom = zoom;
         camara.update();
@@ -1300,16 +1452,32 @@ public class PantallaEditor extends PantallaBase {
         lote.end();
     }
 
-    private void dibujarMundo() {
-        float visibleAncho = 960f * zoom;
-        float visibleAlto = 540f * zoom;
-        dibujante.fondo(nivel.tema, tiempo, camX - visibleAncho / 2f, camY - visibleAlto / 2f,
-            visibleAncho, visibleAlto);
+    private void aplicarVistaMundo() {
+        if (vistaUI == null) return;
+        int hudPx = Math.round(vistaUI.getScreenHeight() * (HUD_H / 540f));
+        vistaUI.apply();
+        com.badlogic.gdx.Gdx.gl.glViewport(vistaUI.getScreenX(), vistaUI.getScreenY(),
+            vistaUI.getScreenWidth(), Math.max(1, vistaUI.getScreenHeight() - hudPx));
+        camara.viewportWidth = VISTA_W;
+        camara.viewportHeight = VISTA_H;
+    }
 
-        float minX = Math.max(-100f, camX - visibleAncho / 2f);
-        float maxX = Math.min(nivel.ancho + 100f, camX + visibleAncho / 2f);
-        float minY = Math.max(-100f, camY - visibleAlto / 2f);
-        float maxY = Math.min(nivel.alto + 100f, camY + visibleAlto / 2f);
+    private void dibujarMundo() {
+        float visibleAncho = VISTA_W * zoom;
+        float visibleAlto = VISTA_H * zoom;
+        dibujante.fondo(nivel.tema, tiempo, camX - visibleAncho / 2f - 200f, camY - visibleAlto / 2f - 200f,
+            visibleAncho + 400f, visibleAlto + 400f);
+
+        Color fuera = new Color(0.01f, 0.02f, 0.04f, 0.88f);
+        Dibujo.rectangulo(lote, camX - visibleAncho, camY - visibleAlto, visibleAncho * 3f, visibleAlto, fuera);
+        Dibujo.rectangulo(lote, camX - visibleAncho, nivel.alto, visibleAncho * 3f, visibleAlto, fuera);
+        Dibujo.rectangulo(lote, camX - visibleAncho, 0f, visibleAncho, nivel.alto, fuera);
+        Dibujo.rectangulo(lote, nivel.ancho, 0f, visibleAncho, nivel.alto, fuera);
+
+        float minX = Math.max(0f, camX - visibleAncho / 2f);
+        float maxX = Math.min(nivel.ancho, camX + visibleAncho / 2f);
+        float minY = Math.max(0f, camY - visibleAlto / 2f);
+        float maxY = Math.min(nivel.alto, camY + visibleAlto / 2f);
         Color grid = new Color(0.45f, 0.60f, 0.85f, 0.09f);
         float primerX = (float) Math.floor(minX / 40f) * 40f;
         float primerY = (float) Math.floor(minY / 40f) * 40f;
@@ -1320,10 +1488,10 @@ public class PantallaEditor extends PantallaBase {
             Dibujo.rectangulo(lote, minX, y, maxX - minX, 1f, grid);
         }
 
-        Dibujo.rectangulo(lote, 0f, 0f, nivel.ancho, 3f, Configuracion.DORADO);
-        Dibujo.rectangulo(lote, 0f, nivel.alto - 3f, nivel.ancho, 3f, Configuracion.DORADO);
-        Dibujo.rectangulo(lote, 0f, 0f, 3f, nivel.alto, Configuracion.DORADO);
-        Dibujo.rectangulo(lote, nivel.ancho - 3f, 0f, 3f, nivel.alto, Configuracion.DORADO);
+        Dibujo.rectangulo(lote, 0f, 0f, nivel.ancho, 4f, Configuracion.DORADO);
+        Dibujo.rectangulo(lote, 0f, nivel.alto - 4f, nivel.ancho, 4f, Configuracion.DORADO);
+        Dibujo.rectangulo(lote, 0f, 0f, 4f, nivel.alto, Configuracion.DORADO);
+        Dibujo.rectangulo(lote, nivel.ancho - 4f, 0f, 4f, nivel.alto, Configuracion.DORADO);
 
         for (Nivel.Plataforma p : nivel.plataformas) dibujante.dibujarPlataforma(p.rect, p.estilo);
         for (Nivel.Peligro p : nivel.peligros) dibujante.dibujarPeligro(p.rect, p.lava, tiempo);
@@ -1403,18 +1571,38 @@ public class PantallaEditor extends PantallaBase {
     }
 
     private void dibujarInterfaz() {
-        // Con un modal abierto, la interfaz de fondo se dibuja pero no recibe
-        // clics. Asi no se dispara GUARDAR, SALIR o una herramienta por error.
         boolean modal = selectorAbierto || !confirmar.isEmpty();
-        boolean clicGuardado = ui.clic;
-        if (modal) ui.clic = false;
-        dibujarBarraSuperior();
-        dibujarPaleta();
-        dibujarPropiedades();
-        ui.clic = clicGuardado;
-        dibujarEstado();
-        if (selectorAbierto && confirmar.isEmpty()) dibujarSelector();
-        if (!confirmar.isEmpty()) dibujarConfirmacion();
+        if (modal) {
+            // Fondo visible pero sin interacción: no limpiamos ui.clic para que
+            // los botones del diálogo activo puedan recibirlo.
+            dibujarBarraSuperiorFondo();
+            dibujarPaletaFondo();
+            dibujarPropiedadesFondo();
+            dibujarEstado();
+            if (selectorAbierto && confirmar.isEmpty()) dibujarSelector();
+            if (!confirmar.isEmpty()) dibujarConfirmacion();
+        } else {
+            dibujarBarraSuperior();
+            dibujarPaleta();
+            dibujarPropiedades();
+            dibujarEstado();
+        }
+    }
+
+    private void dibujarBarraSuperiorFondo() {
+        Dibujo.rectangulo(lote, 0f, 500f, 960f, 40f, new Color(0.035f, 0.05f, 0.09f, 0.98f));
+        Dibujo.rectangulo(lote, 0f, 499f, 960f, 1f, new Color(0.35f, 0.48f, 0.68f, 0.55f));
+    }
+
+    private void dibujarPaletaFondo() {
+        Dibujo.panel(lote, 8f, 60f, 136f, 432f, new Color(0.035f, 0.05f, 0.09f, 0.98f),
+            new Color(0.28f, 0.38f, 0.54f, 1f));
+        Dibujo.textoCentrado(lote, fuente, "HERRAMIENTAS", 76f, 480f, Configuracion.DORADO, 0.62f);
+    }
+
+    private void dibujarPropiedadesFondo() {
+        Dibujo.panel(lote, 742f, 60f, 210f, 440f, new Color(0.05f, 0.07f, 0.12f, 0.98f),
+            new Color(0.30f, 0.40f, 0.58f, 1f));
     }
 
     private void dibujarBarraSuperior() {
@@ -1497,39 +1685,99 @@ public class PantallaEditor extends PantallaBase {
 
     private void dibujarSelector() {
         Dibujo.rectangulo(lote, 0f, 0f, 960f, 540f, new Color(0f, 0f, 0f, 0.62f));
-        Dibujo.panel(lote, 90f, 62f, 780f, 416f, new Color(0.05f, 0.07f, 0.12f, 0.99f),
+        Dibujo.panel(lote, 70f, 48f, 820f, 444f, new Color(0.05f, 0.07f, 0.12f, 0.99f),
             new Color(0.42f, 0.55f, 0.78f, 1f));
-        Dibujo.textoCentrado(lote, fuente, "CARGAR NIVEL GUARDADO", 480f, 452f,
-            Configuracion.DORADO, 1.05f);
+        Dibujo.textoCentrado(lote, fuente, "CARGAR NIVEL", 480f, 468f, Configuracion.DORADO, 1.05f);
 
-        if (listaNiveles.isEmpty()) {
-            Dibujo.textoCentrado(lote, fuente, "No hay niveles personalizados en la carpeta.",
-                480f, 300f, Configuracion.TEXTO_SUAVE, 0.74f);
+        // Pestañas
+        boolean tabMis = pestanaSelector == 0;
+        boolean tabHis = pestanaSelector == 1;
+        if (ui.botonColor("MIS NIVELES", 140f, 432f, 180f, 30f,
+            tabMis ? new Color(0.18f, 0.40f, 0.70f, 1f) : new Color(0.10f, 0.14f, 0.22f, 1f))) {
+            if (!tabMis) { pestanaSelector = 0; paginaSelector = 0; recargarListaSelector(); }
+        }
+        if (ui.botonColor("HISTORIA", 330f, 432f, 180f, 30f,
+            tabHis ? new Color(0.18f, 0.40f, 0.70f, 1f) : new Color(0.10f, 0.14f, 0.22f, 1f))) {
+            if (!tabHis) { pestanaSelector = 1; paginaSelector = 0; recargarListaSelector(); }
+        }
+        Dibujo.texto(lote, fuente, tabMis
+                ? "Niveles guardados en tu carpeta. Se abren para editar."
+                : "Niveles de la campaña. Se abren como copia editable; al guardar se superpone en campaña.",
+            140f, 418f, Configuracion.TEXTO_SUAVE, 0.54f);
+
+        // Lista filtrada
+        List<GestorNiveles.Entrada> visibles = filtrarSelector(pestanaSelector);
+        if (visibles.isEmpty()) {
+            Dibujo.textoCentrado(lote, fuente, tabMis
+                    ? "No hay niveles guardados en tu carpeta."
+                    : "No hay niveles de historia disponibles.",
+                480f, 280f, Configuracion.TEXTO_SUAVE, 0.74f);
         } else {
-            int desde = paginaSelector * 7;
-            for (int i = 0; i < 7 && desde + i < listaNiveles.size(); i++) {
-                GestorNiveles.Entrada e = listaNiveles.get(desde + i);
-                float y = 396f - i * 40f;
-                Dibujo.panel(lote, 112f, y, 736f, 34f, new Color(0.06f, 0.08f, 0.14f, 0.98f),
+            int porPagina = 6;
+            int desde = paginaSelector * porPagina;
+            int maxPagina = Math.max(0, (visibles.size() - 1) / porPagina);
+            if (paginaSelector > maxPagina) paginaSelector = maxPagina;
+            for (int i = 0; i < porPagina && desde + i < visibles.size(); i++) {
+                GestorNiveles.Entrada e = visibles.get(desde + i);
+                float y = 368f - i * 44f;
+                Dibujo.panel(lote, 100f, y, 760f, 38f, new Color(0.06f, 0.08f, 0.14f, 0.98f),
                     new Color(0.26f, 0.36f, 0.52f, 1f));
                 if (e.nivel == null) {
-                    Dibujo.texto(lote, fuente, e.archivo + "  (archivo invalido)", 124f, y + 22f,
+                    Dibujo.texto(lote, fuente, recortar(e.archivo, 40) + "  (invalido)", 114f, y + 24f,
                         Configuracion.ROJO, 0.60f);
-                    continue;
+                } else {
+                    Dibujo.texto(lote, fuente, recortar(e.nivel.nombre, 32), 114f, y + 24f,
+                        Configuracion.TEXTO, 0.70f);
+                    Dibujo.texto(lote, fuente, Nivel.nombreTema(e.nivel.tema), 420f, y + 24f,
+                        Configuracion.TEXTO_SUAVE, 0.56f);
+                    String tag = (e.archivo != null && e.archivo.startsWith("HISTORIA:")) ? "Historia" : "Personal";
+                    Dibujo.texto(lote, fuente, tag, 640f, y + 24f, Configuracion.TEXTO_SUAVE, 0.54f);
                 }
-                Dibujo.texto(lote, fuente, recortar(e.nivel.nombre, 42), 124f, y + 22f,
-                    Configuracion.TEXTO, 0.68f);
-                Dibujo.texto(lote, fuente, Nivel.nombreTema(e.nivel.tema), 480f, y + 22f,
-                    Configuracion.TEXTO_SUAVE, 0.56f);
-                if (ui.boton("CARGAR", 760f, y + 3f, 76f, 28f)) cargarEntrada(e);
+                if (e.nivel != null) {
+                    if (ui.boton("ABRIR", 760f, y + 5f, 84f, 28f)) {
+                        cargarEntrada(e);
+                        return;
+                    }
+                }
             }
-            int maxPagina = Math.max(0, (listaNiveles.size() - 1) / 7);
-            if (ui.boton("<", 330f, 108f, 46f, 28f) && paginaSelector > 0) paginaSelector--;
-            Dibujo.textoCentrado(lote, fuente, "Pagina " + (paginaSelector + 1) + " / " + (maxPagina + 1),
-                480f, 126f, Configuracion.TEXTO_SUAVE, 0.62f);
-            if (ui.boton(">", 584f, 108f, 46f, 28f) && paginaSelector < maxPagina) paginaSelector++;
+            if (ui.boton("<", 340f, 94f, 50f, 28f) && paginaSelector > 0) paginaSelector--;
+            Dibujo.textoCentrado(lote, fuente, "Página " + (paginaSelector + 1) + " / " + (maxPagina + 1),
+                480f, 114f, Configuracion.TEXTO_SUAVE, 0.62f);
+            if (ui.boton(">", 570f, 94f, 50f, 28f) && paginaSelector < maxPagina) paginaSelector++;
         }
-        if (ui.boton("CANCELAR", 400f, 70f, 160f, 30f)) selectorAbierto = false;
+
+        if (ui.boton("CERRAR", 390f, 56f, 180f, 30f)) selectorAbierto = false;
+    }
+
+    private void recargarListaSelector() {
+        List<GestorNiveles.Entrada> base = new ArrayList<>();
+        base.addAll(juego.getGestorNiveles().listar());
+        for (Nivel h : NivelesIntegrados.todos()) {
+            GestorNiveles.Entrada e = new GestorNiveles.Entrada();
+            e.archivo = "HISTORIA:" + h.nombre;
+            e.nivel = h;
+            e.error = null;
+            base.add(e);
+        }
+        Collections.sort(base, new Comparator<GestorNiveles.Entrada>() {
+            @Override
+            public int compare(GestorNiveles.Entrada a, GestorNiveles.Entrada b) {
+                String na = a.nivel != null ? a.nivel.nombre : a.archivo;
+                String nb = b.nivel != null ? b.nivel.nombre : b.archivo;
+                return na.compareToIgnoreCase(nb);
+            }
+        });
+        listaNiveles = base;
+    }
+
+    private List<GestorNiveles.Entrada> filtrarSelector(int pestana) {
+        List<GestorNiveles.Entrada> out = new ArrayList<>();
+        for (GestorNiveles.Entrada e : listaNiveles) {
+            boolean esHistoria = e.archivo != null && e.archivo.startsWith("HISTORIA:");
+            if (pestana == 1 && esHistoria) out.add(e);
+            else if (pestana == 0 && !esHistoria) out.add(e);
+        }
+        return out;
     }
 
     private void dibujarConfirmacion() {
@@ -1553,6 +1801,9 @@ public class PantallaEditor extends PantallaBase {
         } else if ("SOBRESCRIBIR".equals(confirmar)) {
             titulo = "SOBRESCRIBIR";
             texto = "Ya existe un nivel con ese nombre. Sobrescribirlo?";
+        } else if ("REDIMENSIONAR".equals(confirmar)) {
+            titulo = "REDIMENSIONAR ESCENARIO";
+            texto = "Hay " + pendientesFueraCount + " objetos fuera al reducir. Se reubicaran dentro. Continuar?";
         }
         Dibujo.textoCentrado(lote, fuente, titulo, 480f, 332f, Configuracion.DORADO, 1.05f);
         Dibujo.textoCentrado(lote, fuente, texto, 480f, 282f, Configuracion.TEXTO, 0.72f);
@@ -1564,6 +1815,7 @@ public class PantallaEditor extends PantallaBase {
             else if ("CARGAR".equals(accion)) abrirSelectorAhora();
             else if ("BORRAR_ARCHIVO".equals(accion)) borrarArchivo();
             else if ("SOBRESCRIBIR".equals(accion)) guardar(true);
+            else if ("REDIMENSIONAR".equals(accion)) ejecutarRedimension(pendienteAncho, pendienteAlto, true);
         }
         if (ui.boton("NO", 500f, 222f, 120f, 36f)) confirmar = "";
     }

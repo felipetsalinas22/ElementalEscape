@@ -83,6 +83,33 @@ public class GestorNiveles {
         return leer(archivo);
     }
 
+    /**
+     * Carga un nivel con superposicion de usuario: busca primero en la carpeta
+     * de usuario (.elemental-escape/niveles). Si existe una version modificada,
+     * la devuelve. Si no, devuelve el nivel integrado de la historia.
+     * El parametro nombreIntegrado se usa para buscar el nivel de la historia
+     * por su nombre cuando no hay archivo de usuario.
+     */
+    public Nivel cargarConSuperposicion(String nombreIntegrado) throws IOException {
+        // 1. Buscar en la carpeta de usuario por nombre
+        for (Entrada e : listar()) {
+            if (e.nivel != null && e.archivo != null && !e.archivo.startsWith("HISTORIA:")
+                && e.nivel.nombre != null
+                && e.nivel.nombre.trim().equalsIgnoreCase(nombreIntegrado.trim())) {
+                return e.nivel;
+            }
+        }
+        // 2. Si no hay version de usuario, devolver el integrado de la historia
+        for (Nivel h : NivelesIntegrados.todos()) {
+            if (h.nombre != null && h.nombre.trim().equalsIgnoreCase(nombreIntegrado.trim())) {
+                Nivel copia = json.fromJson(Nivel.class, json.toJson(h));
+                if (copia != null) copia.normalizarEditor();
+                return copia;
+            }
+        }
+        throw new IOException("No se encontro el nivel: " + nombreIntegrado);
+    }
+
     private Nivel leer(FileHandle archivo) throws IOException {
         try {
             String texto = archivo.readString("UTF-8");

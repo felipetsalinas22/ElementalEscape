@@ -547,16 +547,44 @@ public class Partida {
             else if (izquierda > 0 && derecha == 0 && izquierda >= necesarios) dx = -paso;
             if (dx == 0f) continue;
 
-            float xAntes = c.rect.x;
-            c.rect.x += dx;
-            for (Rectangle s : solidosCaja) {
-                if (s == c.rect) continue;
-                if (c.rect.overlaps(s)) {
-                    c.rect.x = xAntes;
-                    break;
-                }
-            }
+            empujarCaja(c, dx, dx > 0f ? derecha : izquierda, 0);
         }
+    }
+
+    private boolean empujarCaja(CajaEstado c, float dx, int empujadores, int profundidad) {
+        if (profundidad >= cajas.length) return false;
+
+        float xAntes = c.rect.x;
+        c.rect.x += dx;
+
+        for (Rectangle s : solidosCaja) {
+            if (s == c.rect) continue;
+            if (!solapan(c.rect, s)) continue;
+
+            CajaEstado otra = cajaDe(s);
+            int necesarios = otra != null && otra.datos.pesada ? 2 : 1;
+            if (otra != null && empujadores >= necesarios) {
+                float xOtraAntes = otra.rect.x;
+                if (empujarCaja(otra, dx, empujadores, profundidad + 1) && !solapan(c.rect, s)) {
+                    continue;
+                }
+                otra.rect.x = xOtraAntes;
+            }
+
+            c.rect.x = xAntes;
+            return false;
+        }
+        return true;
+    }
+
+    private CajaEstado cajaDe(Rectangle rect) {
+        for (CajaEstado c : cajas) if (c.rect == rect) return c;
+        return null;
+    }
+
+    private boolean solapan(Rectangle a, Rectangle b) {
+        return a.x < b.x + b.width - 0.05f && a.x + a.width > b.x + 0.05f
+            && a.y < b.y + b.height - 0.05f && a.y + a.height > b.y + 0.05f;
     }
 
     private boolean puedeEmpujar(Jugador p, Rectangle caja, Entrada e) {

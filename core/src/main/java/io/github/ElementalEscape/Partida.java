@@ -498,6 +498,7 @@ public class Partida {
             c.rect.x += c.velX * dt;
             c.velX *= 0.82f;
             for (Rectangle s : solidosCaja) {
+                if (s == c.rect) continue;
                 if (!c.rect.overlaps(s)) continue;
                 if (c.velX > 0f) c.rect.x = s.x - c.rect.width;
                 else if (c.velX < 0f) c.rect.x = s.x + s.width;
@@ -508,6 +509,7 @@ public class Partida {
             c.rect.y += c.velY * dt;
             c.enSuelo = false;
             for (Rectangle s : solidosCaja) {
+                if (s == c.rect) continue;
                 if (!c.rect.overlaps(s)) continue;
                 if (c.velY <= 0f && yAntes >= s.y + s.height - 1f) {
                     c.rect.y = s.y + s.height;
@@ -548,6 +550,7 @@ public class Partida {
             float xAntes = c.rect.x;
             c.rect.x += dx;
             for (Rectangle s : solidosCaja) {
+                if (s == c.rect) continue;
                 if (c.rect.overlaps(s)) {
                     c.rect.x = xAntes;
                     break;
@@ -597,6 +600,7 @@ public class Partida {
             }
         }
         for (MovilEstado m : moviles) solidosCaja.add(m.rect);
+        for (CajaEstado c : cajas) solidosCaja.add(c.rect);
     }
 
     private void actualizarMecanismos(float dt, boolean puntuar) {

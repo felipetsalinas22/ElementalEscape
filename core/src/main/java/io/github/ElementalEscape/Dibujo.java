@@ -7,10 +7,6 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
-/**
- * Dibujo con SpriteBatch y texturas generadas por codigo.
- * No usamos ShapeRenderer porque en algunas placas AMD hace crashear el juego.
- */
 public final class Dibujo {
     private Dibujo() { }
 
@@ -47,7 +43,6 @@ public final class Dibujo {
         return t;
     }
 
-    /** Circulo con centro solido y borde suave (sirve para luces). */
     private static Texture crearBrillo(int lado) {
         Pixmap p = new Pixmap(lado, lado, Pixmap.Format.RGBA8888);
         p.setColor(0, 0, 0, 0);
@@ -90,7 +85,6 @@ public final class Dibujo {
         return t;
     }
 
-    /** Degradado vertical: arriba opaco, abajo transparente. */
     private static Texture crearDegradado() {
         int alto = 64;
         Pixmap p = new Pixmap(2, alto, Pixmap.Format.RGBA8888);
@@ -142,14 +136,12 @@ public final class Dibujo {
         lote.setColor(Color.WHITE);
     }
 
-    /** Degradado que ocupa un rectangulo. Opaco arriba, transparente abajo. */
     public static void degradado(SpriteBatch lote, float x, float y, float ancho, float alto, Color color) {
         lote.setColor(color);
         lote.draw(texturaDegradado, x, y, ancho, alto);
         lote.setColor(Color.WHITE);
     }
 
-    /** Rectangulo con esquinas redondeadas hecho con un rectangulo y dos circulos por lado. */
     public static void rectanguloRedondeado(SpriteBatch lote, float x, float y, float ancho, float alto,
                                             float radio, Color color) {
         if (radio <= 0f) { rectangulo(lote, x, y, ancho, alto, color); return; }
@@ -163,7 +155,6 @@ public final class Dibujo {
         circulo(lote, x + ancho - radio * 2f, y, radio * 2f, color);
     }
 
-    /** Panel de interfaz con borde. */
     public static void panel(SpriteBatch lote, float x, float y, float ancho, float alto, Color relleno, Color borde) {
         rectanguloRedondeado(lote, x, y, ancho, alto, 12f, borde);
         rectanguloRedondeado(lote, x + 2f, y + 2f, ancho - 4f, alto - 4f, 10f, relleno);
@@ -202,7 +193,6 @@ public final class Dibujo {
         texto(lote, fuente, texto, x, y, color, escala);
     }
 
-    /** Dibuja el texto terminando exactamente en derechaX. */
     public static void textoDerecha(SpriteBatch lote, BitmapFont fuente, String texto, float derechaX, float y,
                                     Color color, float escala) {
         float ancho = anchoTexto(fuente, texto, escala);

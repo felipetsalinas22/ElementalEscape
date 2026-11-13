@@ -6,13 +6,6 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 
-/**
- * Dibuja el mundo, los personajes y el HUD con SpriteBatch.
- *
- * Toda la direccion artistica esta generada por codigo: fondos por capas,
- * parallax, siluetas, particulas ambientales y personajes humanoides con
- * animaciones. El dibujo nunca modifica las dimensiones de colision.
- */
 public class DibujanteJuego {
     private final SpriteBatch lote;
     private final BitmapFont fuente;
@@ -27,7 +20,6 @@ public class DibujanteJuego {
     private static final Color MURO = new Color(0.17f, 0.19f, 0.27f, 1f);
     private static final Color MURO_CLARO = new Color(0.34f, 0.39f, 0.51f, 1f);
 
-    /** Paleta de fondo por tema. Mantiene una direccion artistica comun. */
     private static final class Paleta {
         Color arriba;
         Color abajo;
@@ -42,21 +34,23 @@ public class DibujanteJuego {
         this.fuente = fuente;
     }
 
-    // =========================================================
-    //                       FONDOS
-    // =========================================================
-
-    public void fondo(String tema, float t, float x, float y, float ancho, float alto) {
+    public void fondo(String tema, float t, float vx, float vy, float vw, float vh,
+                      float nivelAncho, float nivelAlto) {
         Paleta p = paleta(tema);
-        float parallaxLejos = positivo(x * 0.08f, ancho);
-        float parallaxMedio = positivo(x * 0.18f, ancho);
-        float parallaxCerca = positivo(x * 0.32f, ancho);
-        float olas = -y * 0.045f;
+        float x = vx - vw * 0.5f;
+        float y = vy - vh * 0.5f;
+        float ancho = vw * 2f;
+        float alto = vh * 2f;
+
+        float parallaxLejos = positivo(vx * 0.08f, ancho);
+        float parallaxMedio = positivo(vx * 0.18f, ancho);
+        float parallaxCerca = positivo(vx * 0.32f, ancho);
+        float olas = -vy * 0.04f;
 
         Dibujo.rectangulo(lote, x, y, ancho, alto, p.arriba);
         Dibujo.degradado(lote, x, y, ancho, alto * 0.94f, p.abajo);
-        Dibujo.brillo(lote, x + ancho * 0.50f, y + alto * 0.30f + olas,
-            ancho * 0.95f, new Color(p.acento.r, p.acento.g, p.acento.b, 0.10f));
+        Dibujo.brillo(lote, x + ancho * 0.50f, y + alto * 0.32f + olas,
+            Math.max(ancho, alto) * 0.90f, new Color(p.acento.r, p.acento.g, p.acento.b, 0.10f));
 
         if ("VOLCAN".equals(tema)) fondoVolcan(t, x, y, ancho, alto, p, parallaxLejos, parallaxMedio, olas);
         else if ("CAVERNA".equals(tema)) fondoCaverna(t, x, y, ancho, alto, p, parallaxLejos, parallaxMedio, olas);
@@ -67,18 +61,30 @@ public class DibujanteJuego {
         else if ("COSMOS".equals(tema) || "FINAL".equals(tema)) fondoCosmos(t, x, y, ancho, alto, p, parallaxLejos, parallaxMedio, olas);
         else fondoTemplo(t, x, y, ancho, alto, p, parallaxLejos, parallaxMedio, parallaxCerca, olas);
 
-        // Polvo ambiental muy tenue: da profundidad sin competir con el juego.
         for (int i = 0; i < 34; i++) {
-            float px = x + positivo(i * 137f + t * (4f + i % 5), ancho + 120f) - 60f;
-            float py = y + 40f + ((i * 71f + t * (3f + i % 3)) % Math.max(1f, alto - 80f));
+            float px = vx + positivo(i * 137f + t * (4f + i % 5), vw + 120f) - 60f;
+            float py = vy + 30f + ((i * 71f + t * (3f + i % 3)) % Math.max(1f, vh - 60f));
             float a = 0.05f + 0.05f * (0.5f + 0.5f * (float) Math.sin(t * 1.3f + i));
             Dibujo.circulo(lote, px, py, 2f + (i % 3), new Color(p.acento.r, p.acento.g, p.acento.b, a));
         }
 
-        // Vineta y linea de horizonte: enmarcan la accion y mejoran contraste.
-        Dibujo.degradado(lote, x, y + alto * 0.78f, ancho, alto * 0.22f, new Color(0f, 0f, 0f, 0.40f));
-        Dibujo.rectangulo(lote, x, y + 4f, ancho, 1f, new Color(p.acento.r, p.acento.g, p.acento.b, 0.16f));
-        Dibujo.rectangulo(lote, x, y, ancho, 10f, new Color(0f, 0f, 0f, 0.24f));
+        Dibujo.degradado(lote, vx, vy + vh * 0.82f, vw, vh * 0.18f, new Color(0f, 0f, 0f, 0.22f));
+        Dibujo.rectangulo(lote, vx, vy, vw, 6f, new Color(0f, 0f, 0f, 0.16f));
+
+        float margen = Math.max(vw, vh);
+        if (vx < 0f) Dibujo.rectangulo(lote, vx - margen, vy - margen, -vx + margen, vh + margen * 2f, new Color(0f, 0f, 0f, 0.92f));
+        if (vy < 0f) Dibujo.rectangulo(lote, vx - margen, vy - margen, vw + margen * 2f, -vy + margen, new Color(0f, 0f, 0f, 0.92f));
+        if (vx + vw > nivelAncho) Dibujo.rectangulo(lote, nivelAncho, vy - margen, vx + vw - nivelAncho + margen, vh + margen * 2f, new Color(0f, 0f, 0f, 0.92f));
+        if (vy + vh > nivelAlto) Dibujo.rectangulo(lote, vx - margen, nivelAlto, vw + margen * 2f, vy + vh - nivelAlto + margen, new Color(0f, 0f, 0f, 0.92f));
+
+        Dibujo.rectangulo(lote, 0f, 0f, nivelAncho, 2f, new Color(p.acento.r, p.acento.g, p.acento.b, 0.12f));
+        Dibujo.rectangulo(lote, 0f, nivelAlto - 2f, nivelAncho, 2f, new Color(p.acento.r, p.acento.g, p.acento.b, 0.12f));
+        Dibujo.rectangulo(lote, 0f, 0f, 2f, nivelAlto, new Color(p.acento.r, p.acento.g, p.acento.b, 0.12f));
+        Dibujo.rectangulo(lote, nivelAncho - 2f, 0f, 2f, nivelAlto, new Color(p.acento.r, p.acento.g, p.acento.b, 0.12f));
+    }
+
+    public void fondo(String tema, float t, float x, float y, float ancho, float alto) {
+        fondo(tema, t, x, y, ancho, alto, Math.max(ancho, 960f), Math.max(alto, 540f));
     }
 
     private Paleta paleta(String tema) {
@@ -147,7 +153,7 @@ public class DibujanteJuego {
             p.cerca.set(0.38f, 0.26f, 0.62f, 1f);
             p.acento.set(0.80f, 0.62f, 1f, 1f);
         } else {
-            // Templo: piedra calida, incienso y luz dorada.
+
             p.arriba.set(0.06f, 0.08f, 0.12f, 1f);
             p.abajo.set(0.22f, 0.19f, 0.15f, 1f);
             p.lejos.set(0.16f, 0.16f, 0.17f, 1f);
@@ -160,7 +166,7 @@ public class DibujanteJuego {
 
     private void fondoTemplo(float t, float x, float y, float ancho, float alto, Paleta p,
                              float lejos, float medio, float cerca, float olas) {
-        // Arcos lejanos y columnas partidas.
+
         for (int i = 0; i < 7; i++) {
             float cx = x + positivo(i * 185f - lejos, ancho + 220f) - 110f;
             float base = y + 78f + olas;
@@ -182,14 +188,14 @@ public class DibujanteJuego {
                 Dibujo.rectangulo(lote, cx - 15f, base + 30f + j * 40f, 30f, 2f,
                     new Color(0f, 0f, 0f, 0.18f));
             }
-            // Antorchas y sus halos.
+
             float pulso = 0.5f + 0.5f * (float) Math.sin(t * 2.4f + i);
             Dibujo.brillo(lote, cx, base + h * 0.62f, 58f + pulso * 10f,
                 new Color(p.acento.r, p.acento.g, p.acento.b, 0.12f));
             Dibujo.circulo(lote, cx - 4f, base + h * 0.62f - 8f, 8f + pulso * 3f,
                 new Color(p.acento.r, p.acento.g, p.acento.b, 0.82f));
         }
-        // Enredaderas colgantes y runas tenues.
+
         for (int i = 0; i < 9; i++) {
             float cx = x + positivo(i * 127f - cerca, ancho + 160f) - 80f;
             float h = 35f + (i % 4) * 22f;
@@ -200,7 +206,7 @@ public class DibujanteJuego {
 
     private void fondoVolcan(float t, float x, float y, float ancho, float alto, Paleta p,
                              float lejos, float medio, float olas) {
-        // Montanas y cono volcanico geometrico.
+
         for (int i = 0; i < 6; i++) {
             float cx = x + positivo(i * 225f - lejos, ancho + 280f) - 140f;
             float base = y + 60f + olas;
@@ -213,7 +219,7 @@ public class DibujanteJuego {
             255f, 255f, 45f, new Color(p.medio.r, p.medio.g, p.medio.b, 0.95f));
         Dibujo.rectanguloRotado(lote, cx - 110f, y + 106f, 220f, 220f,
             110f, 110f, 45f, new Color(0.10f, 0.035f, 0.025f, 0.95f));
-        // Rio de lava en el fondo.
+
         for (int i = 0; i < 8; i++) {
             float rx = x + positivo(i * 150f - medio * 0.6f, ancho + 200f) - 100f;
             float ry = y + 28f + (i % 3) * 12f + (float) Math.sin(t * 2f + i) * 3f;
@@ -221,7 +227,7 @@ public class DibujanteJuego {
             Dibujo.rectangulo(lote, rx + 14f, ry + 2f, 74f, 3f, new Color(1f, 0.72f, 0.20f, 0.52f));
             Dibujo.brillo(lote, rx + 65f, ry + 4f, 120f, new Color(1f, 0.25f, 0.04f, 0.12f));
         }
-        // Humo y brasas.
+
         for (int i = 0; i < 24; i++) {
             float ex = x + positivo(i * 61f + t * (8f + i % 7), ancho + 80f) - 40f;
             float ey = y + 30f + ((i * 53f + t * (12f + i % 5)) % (alto - 70f));
@@ -237,7 +243,7 @@ public class DibujanteJuego {
 
     private void fondoCaverna(float t, float x, float y, float ancho, float alto, Paleta p,
                               float lejos, float medio, float olas) {
-        // Techo irregular y estalactitas.
+
         Dibujo.rectangulo(lote, x, y + alto - 52f, ancho, 52f, new Color(0.015f, 0.025f, 0.035f, 0.75f));
         for (int i = 0; i < 18; i++) {
             float cx = x + positivo(i * 73f - lejos, ancho + 100f) - 30f;
@@ -245,13 +251,13 @@ public class DibujanteJuego {
             Dibujo.rectanguloRotado(lote, cx - 10f, y + alto - h, 20f, h, 10f, 0f, 45f,
                 new Color(p.lejos.r, p.lejos.g, p.lejos.b, 0.80f));
         }
-        // Paredes laterales y rocas lejanas.
+
         for (int i = 0; i < 7; i++) {
             float cx = x + positivo(i * 190f - medio, ancho + 250f) - 120f;
             Dibujo.circulo(lote, cx, y + 45f + olas, 260f + (i % 3) * 45f,
                 new Color(p.medio.r, p.medio.g, p.medio.b, 0.30f));
         }
-        // Cristales luminosos por grupos.
+
         for (int i = 0; i < 13; i++) {
             float cx = x + positivo(i * 101f - lejos * 0.7f, ancho + 80f) - 40f;
             float baseY = y + 28f + (i % 4) * 34f;
@@ -265,7 +271,7 @@ public class DibujanteJuego {
             Dibujo.rectanguloRotado(lote, cx - 2f, baseY + tam * 0.3f, 4f, tam * 1.4f,
                 2f, 0f, (i % 2 == 0) ? 8f : -9f, new Color(1f, 1f, 1f, 0.35f));
         }
-        // Goteo y niebla baja.
+
         for (int i = 0; i < 22; i++) {
             float cx = x + positivo(i * 89f + t * (5f + i % 4), ancho + 100f) - 50f;
             float cy = y + ((i * 47f + t * 18f) % (alto - 80f));
@@ -276,13 +282,13 @@ public class DibujanteJuego {
 
     private void fondoBosque(float t, float x, float y, float ancho, float alto, Paleta p,
                              float lejos, float medio, float olas) {
-        // Rayos de luz.
+
         for (int i = 0; i < 7; i++) {
             float cx = x + 80f + i * 150f - medio * 0.25f;
             Dibujo.rectanguloRotado(lote, cx, y + 130f + olas, 34f, alto * 0.90f,
                 17f, 0f, 14f, new Color(0.75f, 1f, 0.62f, 0.035f));
         }
-        // Troncos y copas en tres capas.
+
         for (int capa = 0; capa < 3; capa++) {
             Color color = capa == 0 ? p.lejos : (capa == 1 ? p.medio : p.cerca);
             float desplazamiento = capa == 0 ? lejos : (capa == 1 ? medio : lejos * 1.7f);
@@ -299,7 +305,7 @@ public class DibujanteJuego {
                     new Color(color.r * 0.80f, color.g, color.b * 0.80f, 0.20f + capa * 0.08f));
             }
         }
-        // Luciernagas.
+
         for (int i = 0; i < 26; i++) {
             float cx = x + positivo(i * 97f + (float) Math.sin(t * 0.6f + i) * 28f, ancho);
             float cy = y + 90f + ((i * 47f) % 270f) + (float) Math.sin(t * 1.4f + i) * 12f;
@@ -311,7 +317,7 @@ public class DibujanteJuego {
 
     private void fondoLaboratorio(float t, float x, float y, float ancho, float alto, Paleta p,
                                   float lejos, float medio, float olas) {
-        // Rejilla de pared y paneles.
+
         for (int i = 0; i < 14; i++) {
             float cx = x + i * 80f - medio * 0.10f;
             Dibujo.rectangulo(lote, cx, y + 40f, 1f, alto - 80f, new Color(p.acento.r, p.acento.g, p.acento.b, 0.06f));
@@ -320,7 +326,7 @@ public class DibujanteJuego {
             float cy = y + 60f + i * 70f;
             Dibujo.rectangulo(lote, x, cy, ancho, 1f, new Color(p.acento.r, p.acento.g, p.acento.b, 0.06f));
         }
-        // Tuberias y maquinas.
+
         for (int i = 0; i < 8; i++) {
             float cx = x + positivo(i * 155f - lejos, ancho + 180f) - 90f;
             float anchoTubo = 7f + (i % 3) * 4f;
@@ -333,7 +339,7 @@ public class DibujanteJuego {
                     new Color(p.acento.r, p.acento.g, p.acento.b, 0.30f));
             }
         }
-        // Pantallas con datos falsos, pero con lectura visual clara.
+
         for (int i = 0; i < 4; i++) {
             float sx = x + 102f + i * 238f - medio * 0.15f;
             float sy = y + 292f + (i % 2) * 54f + olas;
@@ -345,7 +351,7 @@ public class DibujanteJuego {
                     new Color(p.acento.r, p.acento.g, p.acento.b, 0.22f + j * 0.08f));
             }
         }
-        // Cables y chispas.
+
         for (int i = 0; i < 10; i++) {
             float cx = x + 50f + i * 96f - lejos * 0.2f;
             Dibujo.linea(lote, cx, y + 44f, cx + 28f, y + 170f + (i % 3) * 20f, 2f,
@@ -360,13 +366,13 @@ public class DibujanteJuego {
 
     private void fondoHielo(float t, float x, float y, float ancho, float alto, Paleta p,
                             float lejos, float medio, float olas) {
-        // Aurora.
+
         for (int i = 0; i < 4; i++) {
             float cy = y + 310f + i * 36f + olas;
             Dibujo.elipse(lote, x + 40f - medio * 0.10f, cy, ancho * 0.80f, 34f + i * 18f,
                 new Color(p.acento.r, p.acento.g, p.acento.b, 0.055f + i * 0.018f));
         }
-        // Montanas de hielo estratificadas.
+
         for (int i = 0; i < 9; i++) {
             float cx = x + positivo(i * 155f - lejos, ancho + 220f) - 100f;
             float lado = 160f + (i % 4) * 48f;
@@ -379,7 +385,7 @@ public class DibujanteJuego {
             Dibujo.rectanguloRotado(lote, cx - lado / 2f, y + 26f - lado / 2f, lado, lado,
                 lado / 2f, lado / 2f, 45f, new Color(p.medio.r, p.medio.g, p.medio.b, 0.50f));
         }
-        // Cristales y copos.
+
         for (int i = 0; i < 12; i++) {
             float cx = x + positivo(i * 111f - medio * 0.4f, ancho + 80f) - 40f;
             float cy = y + 54f + (i % 5) * 44f;
@@ -395,7 +401,7 @@ public class DibujanteJuego {
 
     private void fondoCielo(float t, float x, float y, float ancho, float alto, Paleta p,
                             float lejos, float medio, float olas) {
-        // Sol y nubes en capas.
+
         Dibujo.brillo(lote, x + 760f - lejos * 0.10f, y + 390f + olas, 260f,
             new Color(1f, 0.92f, 0.62f, 0.14f));
         for (int capa = 0; capa < 3; capa++) {
@@ -412,7 +418,7 @@ public class DibujanteJuego {
                 Dibujo.circulo(lote, cx + anchoNube * 0.24f, cy + 6f, 34f + capa * 7f, c);
             }
         }
-        // Islas flotantes lejanas.
+
         for (int i = 0; i < 3; i++) {
             float cx = x + 120f + i * 330f - medio * 0.18f;
             float cy = y + 170f + (i % 2) * 90f + olas;
@@ -421,7 +427,7 @@ public class DibujanteJuego {
                 new Color(p.lejos.r, p.lejos.g, p.lejos.b, 0.30f));
             Dibujo.circulo(lote, cx + 20f, cy + 8f, 9f, new Color(0.25f, 0.55f, 0.25f, 0.42f));
         }
-        // Aves.
+
         for (int i = 0; i < 6; i++) {
             float cx = x + positivo(i * 167f + t * 10f, ancho + 100f) - 50f;
             float cy = y + 360f + (i % 3) * 36f + (float) Math.sin(t * 1.5f + i) * 7f;
@@ -432,14 +438,14 @@ public class DibujanteJuego {
 
     private void fondoCosmos(float t, float x, float y, float ancho, float alto, Paleta p,
                              float lejos, float medio, float olas) {
-        // Nebulosas.
+
         for (int i = 0; i < 5; i++) {
             float cx = x + 130f + i * 210f - lejos * 0.15f;
             float cy = y + 190f + (i % 3) * 82f + olas;
             Dibujo.elipse(lote, cx, cy, 250f + (i % 2) * 120f, 80f + (i % 3) * 24f,
                 new Color(p.medio.r, p.medio.g, p.medio.b, 0.075f));
         }
-        // Planeta anillado.
+
         float px = x + 760f - medio * 0.10f;
         float py = y + 370f + olas;
         Dibujo.brillo(lote, px, py, 230f, new Color(p.acento.r, p.acento.g, p.acento.b, 0.11f));
@@ -447,7 +453,7 @@ public class DibujanteJuego {
         Dibujo.anillo(lote, px, py, 190f, new Color(p.acento.r, p.acento.g, p.acento.b, 0.32f));
         Dibujo.rectanguloRotado(lote, px - 115f, py - 12f, 230f, 7f, 115f, 3.5f, -16f,
             new Color(p.acento.r, p.acento.g, p.acento.b, 0.24f));
-        // Estrellas y constelaciones.
+
         for (int i = 0; i < 70; i++) {
             float sx = x + ((i * 137f + 23f) % Math.max(1f, ancho));
             float sy = y + ((i * 83f + 41f) % Math.max(1f, alto));
@@ -461,17 +467,13 @@ public class DibujanteJuego {
                     new Color(1f, 1f, 1f, 0.26f * pulso));
             }
         }
-        // Obeliscos flotantes del templo final.
+
         for (int i = 0; i < 3; i++) {
             float cx = x + 90f + i * 320f - lejos * 0.2f;
             Dibujo.rectanguloRotado(lote, cx - 16f, y + 50f, 32f, 170f + i * 28f, 16f, 0f, 45f,
                 new Color(p.lejos.r, p.lejos.g, p.lejos.b, 0.42f));
         }
     }
-
-    // =========================================================
-    //                       MUNDO
-    // =========================================================
 
     public void mundo(Partida p, float t, boolean esCliente) {
         for (Nivel.Plataforma plataforma : p.nivel.plataformas) {
@@ -519,7 +521,6 @@ public class DibujanteJuego {
         else if ("METAL".equals(estilo)) { cuerpo = METAL; luz = METAL_CLARA; }
         else if ("MURO".equals(estilo)) { cuerpo = MURO; luz = MURO_CLARO; }
 
-        // Sombra, cuerpo y remate superior: lectura clara de superficie pisable.
         Dibujo.rectangulo(lote, r.x + 4f, r.y - 5f, r.width, r.height, new Color(0f, 0f, 0f, 0.26f));
         Dibujo.rectangulo(lote, r.x, r.y, r.width, r.height, cuerpo);
         Dibujo.rectangulo(lote, r.x, r.y + r.height - Math.min(6f, r.height * 0.32f),
@@ -531,7 +532,6 @@ public class DibujanteJuego {
         Dibujo.rectangulo(lote, r.x + r.width - Math.min(3f, r.width * 0.15f), r.y,
             Math.min(3f, r.width * 0.15f), r.height, new Color(0f, 0f, 0f, 0.16f));
 
-        // Motivos de material.
         if (r.width > 34f && r.height > 8f) {
             if ("MADERA".equals(estilo)) {
                 for (float x = r.x + 18f; x < r.x + r.width - 8f; x += 34f) {
@@ -553,7 +553,7 @@ public class DibujanteJuego {
                 Dibujo.linea(lote, r.x + r.width * 0.55f, r.y + r.height * 0.65f,
                     r.x + r.width * 0.62f, r.y + r.height * 0.30f, 1.5f,
                     new Color(0f, 0f, 0f, 0.22f));
-                // Musgo sutil en el borde superior.
+
                 for (float x = r.x + 8f; x < r.x + r.width - 6f; x += 29f) {
                     Dibujo.circulo(lote, x, r.y + r.height - 2f, 5f,
                         new Color(0.30f, 0.58f, 0.29f, 0.16f));
@@ -755,17 +755,12 @@ public class DibujanteJuego {
         }
     }
 
-    // =========================================================
-    //                    PERSONAJES
-    // =========================================================
-
     public void dibujarJugador(Jugador p, float t) {
         dibujarHumanoide(p.x, p.y, p.ancho, p.alto, p.tipo, t, p.enSuelo,
             p.velX, p.velY, p.mirandoDerecha, p.tiempoInteraccion > 0f,
             p.celebrando, p.derrotado, p.aplastado, 1f);
     }
 
-    /** Retrato animado para el menu: no necesita una Partida ni altera colisiones. */
     public void dibujarAvatarMenu(float centroX, float baseY, boolean fuego, float t, float escala) {
         float ancho = Configuracion.ANCHO_PERSONAJE * escala;
         float alto = Configuracion.ALTO_PERSONAJE * escala;
@@ -774,10 +769,6 @@ public class DibujanteJuego {
             0f, 0f, true, false, fuego, false, 0f, escala);
     }
 
-    /**
-     * Personaje humanoide dibujado por piezas. Todo queda dentro del espiritu
-     * geometrico del juego, pero con cabeza, torso, brazos, piernas y estados.
-     */
     private void dibujarHumanoide(float x, float y, float ancho, float alto, Jugador.Tipo tipo,
                                   float t, boolean enSuelo, float velX, float velY,
                                   boolean mirandoDerecha, boolean interactuando,
@@ -811,7 +802,6 @@ public class DibujanteJuego {
         float torsoY = base + alto * 0.28f + rebote;
         float hombroY = torsoY + cuerpoAlto * 0.82f;
 
-        // Sombra y aura elemental: no se confunden con el cuerpo fisico.
         Dibujo.elipse(lote, cx - 18f * s, base - 4f * s, 36f * s, 8f * s, SOMBRA);
         Dibujo.brillo(lote, cx, base + alto * 0.50f + rebote, alto * 2.4f,
             new Color(baseColor.r, baseColor.g, baseColor.b, 0.15f));
@@ -823,7 +813,6 @@ public class DibujanteJuego {
                 new Color(baseColor.r, baseColor.g, baseColor.b, 0.10f));
         }
 
-        // Piernas: zancada alterna; en el aire quedan recogidas.
         float zancada = caminando ? fase * 5f * s : 0f;
         float piernaIzqX = cx - 5f * s + zancada * 0.55f;
         float piernaDerX = cx + 5f * s - zancada * 0.55f;
@@ -842,7 +831,6 @@ public class DibujanteJuego {
         Dibujo.rectanguloRedondeado(lote, piernaDerX - 5f * s, pieDerY, 10f * s, 4f * s,
             2f * s, baseColor.cpy().lerp(Color.BLACK, 0.30f));
 
-        // Torso con placas y nucleo.
         Dibujo.rectanguloRedondeado(lote, cx - cuerpoAncho / 2f + inclinacion, torsoY,
             cuerpoAncho, cuerpoAlto, 6f * s, baseColor);
         Dibujo.rectanguloRedondeado(lote, cx - cuerpoAncho / 2f + 2f * s + inclinacion,
@@ -850,10 +838,10 @@ public class DibujanteJuego {
             oscuro.cpy().lerp(baseColor, 0.32f));
         Dibujo.rectangulo(lote, cx - 7f * s + inclinacion, torsoY + cuerpoAlto - 4f * s,
             14f * s, 2f * s, new Color(1f, 1f, 1f, 0.20f));
-        // Cinturon.
+
         Dibujo.rectangulo(lote, cx - cuerpoAncho / 2f + inclinacion, torsoY + 4f * s,
             cuerpoAncho, 2.5f * s, new Color(0.10f, 0.12f, 0.17f, 0.80f));
-        // Nucleo brillante.
+
         float pulso = 0.5f + 0.5f * (float) Math.sin(t * 4f + (tipo == Jugador.Tipo.FUEGO ? 0f : 1.2f));
         Dibujo.brillo(lote, cx + inclinacion, torsoY + cuerpoAlto * 0.54f, 26f * s,
             new Color(claro.r, claro.g, claro.b, 0.24f + pulso * 0.10f));
@@ -867,7 +855,6 @@ public class DibujanteJuego {
                 3.5f * s, new Color(1f, 1f, 1f, 0.58f));
         }
 
-        // Brazos: caminar, salto, interaccion, victoria o derrota.
         float brazoSwing = caminando ? -fase * 7f * s : 0f;
         float manoIzqX = cx - 13f * s + (mirandoDerecha ? 0f : 2f * s);
         float manoDerX = cx + 13f * s + (mirandoDerecha ? 0f : -2f * s);
@@ -912,14 +899,13 @@ public class DibujanteJuego {
                 new Color(1f, 1f, 1f, 0.45f));
         }
 
-        // Cabeza, rostro y ojos.
         Dibujo.rectangulo(lote, cx - 3f * s + inclinacion, cabezaCY - 12f * s,
-            6f * s, 5f * s, oscuro); // cuello
+            6f * s, 5f * s, oscuro);
         Dibujo.circulo(lote, cx - cabezaDiam / 2f + inclinacion, cabezaCY - cabezaDiam / 2f,
             cabezaDiam, baseColor);
         Dibujo.circulo(lote, cx - cabezaDiam * 0.33f + inclinacion, cabezaCY - cabezaDiam * 0.30f,
             cabezaDiam * 0.66f, new Color(claro.r, claro.g, claro.b, 0.55f));
-        // Rostro oscuro: lectura humana, sin perder el elemento.
+
         Dibujo.elipse(lote, cx - cabezaDiam * 0.37f + inclinacion, cabezaCY - cabezaDiam * 0.34f,
             cabezaDiam * 0.74f, cabezaDiam * 0.62f, rostro);
         float ojoY = cabezaCY + cabezaDiam * 0.02f;
@@ -935,13 +921,13 @@ public class DibujanteJuego {
         Dibujo.circulo(lote, cx + ojoSep - 1.6f * s + inclinacion + mirada * 1.5f * s,
             pupilaY - 1.5f * s, 3f * s, new Color(0.05f, 0.06f, 0.09f, 1f));
         if (derrotado) {
-            // Parpados caidos.
+
             Dibujo.rectangulo(lote, cx - ojoSep - 3f * s + inclinacion, ojoY - 0.5f * s,
                 6f * s, 2.2f * s, new Color(0.05f, 0.06f, 0.09f, 0.75f));
             Dibujo.rectangulo(lote, cx + ojoSep - 3f * s + inclinacion, ojoY - 0.5f * s,
                 6f * s, 2.2f * s, new Color(0.05f, 0.06f, 0.09f, 0.75f));
         }
-        // Boca.
+
         float bocaY = cabezaCY - cabezaDiam * 0.22f;
         if (celebrando) {
             Dibujo.circulo(lote, cx - 3f * s + inclinacion, bocaY - 3f * s, 6f * s,
@@ -951,7 +937,6 @@ public class DibujanteJuego {
                 8f * s, 1.8f * s, 0.9f * s, new Color(0.85f, 0.85f, 0.90f, 0.52f));
         }
 
-        // Cabello elemental.
         if (tipo == Jugador.Tipo.FUEGO) {
             for (int i = 0; i < 6; i++) {
                 float fx = cx + inclinacion - 9f * s + i * 3.6f * s;
@@ -969,7 +954,7 @@ public class DibujanteJuego {
                     new Color(1f, 0.80f, 0.28f, 0.50f));
             }
         } else {
-            // Melena fluida de agua, por encima de los ojos para no taparlos.
+
             Dibujo.circulo(lote, cx - 8f * s + inclinacion, cabezaCY + 8f * s, 15f * s,
                 new Color(0.12f, 0.44f, 0.90f, 0.92f));
             Dibujo.circulo(lote, cx + 8f * s + inclinacion, cabezaCY + 9f * s, 15f * s,
@@ -988,7 +973,6 @@ public class DibujanteJuego {
             }
         }
 
-        // Pequenas particulas del personaje.
         for (int i = 0; i < 3; i++) {
             float px = cx + (float) Math.sin(t * 3f + i * 2.1f) * 17f * s;
             float py = base + 8f * s + ((t * (18f + i * 4f) + i * 19f) % (38f * s));
@@ -996,10 +980,6 @@ public class DibujanteJuego {
                 new Color(claro.r, claro.g, claro.b, 0.22f));
         }
     }
-
-    // =========================================================
-    //                         HUD
-    // =========================================================
 
     public void dibujarHUDSuperior(Partida p, GestorRed red, Juego juego, boolean esCliente) {
         if (p == null) return;

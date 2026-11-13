@@ -8,11 +8,6 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
-/**
- * Base de todas las pantallas. Usa una resolucion virtual de 960x540 con
- * FitViewport: el juego se ve igual en cualquier ventana y el raton se convierte
- * automaticamente a coordenadas de interfaz.
- */
 public abstract class PantallaBase implements Screen {
     protected final Juego juego;
     protected SpriteBatch lote;
@@ -48,7 +43,6 @@ public abstract class PantallaBase implements Screen {
         recursosListos = true;
     }
 
-    /** Las subclases crean aqui sus camaras o cargan datos. */
     protected void alMostrar() { }
 
     @Override
@@ -74,7 +68,6 @@ public abstract class PantallaBase implements Screen {
         lote.setProjectionMatrix(camaraUI.combined);
     }
 
-    /** Fondo comun de menus: degradado, estrellas y linea inferior. */
     protected void fondoEstrellado(float tiempo, Color arriba, Color abajo) {
         Dibujo.rectangulo(lote, 0f, 0f, 960f, 540f, arriba);
         Dibujo.degradado(lote, 0f, 0f, 960f, 460f, abajo);
@@ -88,7 +81,6 @@ public abstract class PantallaBase implements Screen {
         Dibujo.rectangulo(lote, 0f, 66f, 960f, 1f, new Color(0.35f, 0.45f, 0.70f, 0.20f));
     }
 
-    /** Encabezado uniforme para pantallas de menu. */
     protected void tituloPantalla(String titulo, String subtitulo, Color color) {
         Dibujo.textoCentrado(lote, fuente, titulo, 480f, 500f, color, 1.65f);
         if (subtitulo != null && !subtitulo.isEmpty()) {
@@ -129,12 +121,10 @@ public abstract class PantallaBase implements Screen {
         recursosListos = false;
     }
 
-    /** Atajo para volver al menu desde cualquier pantalla. */
     protected void irAlMenu() {
         cambiarPantalla(new MenuPrincipal(juego));
     }
 
-    /** Ejecuta una accion despues de cerrar el lote de dibujo, evitando cambiar de pantalla mientras se dibuja. */
     protected void aplazar(Runnable accion) {
         if (accionPendiente == null) accionPendiente = accion;
     }

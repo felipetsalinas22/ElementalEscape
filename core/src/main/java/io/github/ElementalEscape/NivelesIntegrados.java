@@ -4,15 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.Json;
 
-/**
- * Campana de 8 niveles cargada desde archivos JSON del editor en
- * core/src/main/resources/niveles. Los niveles editados por el usuario quedan
- * como niveles principales de la historia.
- *
- * Orden: 01 El despertar elemental, 02 Ruedas y cerrojos, 03 Torres enfrentadas,
- * 04 Ascenso entrelazado, 05 Salas del sello, 06 Galerias cruzadas,
- * 07 Nucleo sincronizado, 08 Santuario de los elementos.
- */
 public final class NivelesIntegrados {
     private static final Json JSON = new Json();
     private static final String[] ARCHIVOS = {

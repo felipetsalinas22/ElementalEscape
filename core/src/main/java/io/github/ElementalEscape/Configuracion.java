@@ -2,31 +2,24 @@ package io.github.ElementalEscape;
 
 import com.badlogic.gdx.graphics.Color;
 
-/**
- * Todos los valores importantes del juego estan aca.
- * Si durante la exposicion quieren que un personaje salte mas alto,
- * cambien FUERZA_SALTO_FUEGO o FUERZA_SALTO_AGUA y listo.
- */
 public final class Configuracion {
     private Configuracion() { }
 
-    // ---------------- Fisica ----------------
     public static final float VELOCIDAD_PERSONAJE = 300f;
     public static final float FUERZA_SALTO = 820f;
     public static final float GRAVEDAD = 2200f;
     public static final float VELOCIDAD_CAIDA_MAXIMA = 900f;
 
-    // Pequenas diferencias para que cada elemento se sienta distinto, pero equilibrado.
     public static final float VELOCIDAD_FUEGO = 300f;
     public static final float VELOCIDAD_AGUA = 312f;
-    public static final float FUERZA_SALTO_FUEGO = 830f;
+    public static final float FUERZA_SALTO_FUEGO = 1600f;
     public static final float FUERZA_SALTO_AGUA = 802f;
 
     public static final float ANCHO_PERSONAJE = 30f;
     public static final float ALTO_PERSONAJE = 46f;
-    public static final float TIEMPO_COYOTE = 0.09f;       // salto justo despues de dejar el borde
-    public static final float TIEMPO_BUFFER_SALTO = 0.10f; // salto pulsado un poco antes de caer
-    public static final float CORTE_SALTO = 2.4f;          // soltar el salto acorta el salto
+    public static final float TIEMPO_COYOTE = 0.09f;
+    public static final float TIEMPO_BUFFER_SALTO = 0.10f;
+    public static final float CORTE_SALTO = 2.4f;
     public static final float PASO_FISICA = 1f / 120f;
     public static final int MAX_PASOS_POR_FOTOGRAMA = 8;
 
@@ -35,7 +28,13 @@ public final class Configuracion {
     public static final float ANCHO_CAJA = 40f;
     public static final float ALTO_CAJA = 40f;
 
-    // ---------------- Dimensiones ----------------
+    public static final float ZOOM_CAMARA_MIN = 0.78f;
+    public static final float ZOOM_CAMARA_MAX = 1.45f;
+    public static final float SUAVIZADO_CAMARA = 6.5f;
+    public static final float SUAVIZADO_ZOOM_CAMARA = 4.0f;
+    public static final float MARGEN_CAMARA_X = 180f;
+    public static final float MARGEN_CAMARA_Y = 120f;
+
     public static final float ANCHO_MUNDO = 960f;
     public static final float ALTO_MUNDO = 540f;
     public static final float ANCHO_MINIMO_NIVEL = 640f;
@@ -44,17 +43,11 @@ public final class Configuracion {
     public static final float ALTO_MAXIMO_NIVEL = 900f;
     public static final float PASO_EDITOR = 10f;
 
-    /**
-     * Altura reservada al HUD (franja superior de la UI virtual de 960x540).
-     * El mundo se renderiza en un viewport independiente debajo de esta franja.
-     */
     public static final float ALTURA_HUD = 68f;
-    /** Area visible del mundo en pantalla (viewport de juego). */
+
     public static final float ANCHO_VISTA_JUEGO = 960f;
     public static final float ALTO_VISTA_JUEGO = ALTO_MUNDO - ALTURA_HUD;
 
-    // Medidas fijas de los objetos del editor. No se editan desde la interfaz:
-    // el editor coloca siempre objetos de estos tamanos y el JSON los normaliza.
     public static final float ANCHO_PLATAFORMA_EDITOR = 140f;
     public static final float ALTO_PLATAFORMA_EDITOR = 20f;
     public static final float ANCHO_MURO_EDITOR = 24f;
@@ -80,7 +73,6 @@ public final class Configuracion {
     public static final float ANCHO_ORIGEN_EDITOR = 30f;
     public static final float ALTO_ORIGEN_EDITOR = 46f;
 
-    // ---------------- Puntuacion ----------------
     public static final int PUNTOS_COLECCIONABLE = 100;
     public static final int PUNTOS_MECANISMO = 25;
     public static final int PUNTOS_COMPLETAR_NIVEL = 300;
@@ -96,7 +88,6 @@ public final class Configuracion {
     public static final float TIEMPO_REAPARICION = 1.0f;
     public static final float DURACION_TRANSICION = 0.45f;
 
-    // ---------------- Red ----------------
     public static final int PUERTO_PREDETERMINADO = 54555;
     public static final int VERSION_PROTOCOLO = 2;
     public static final float FRECUENCIA_ESTADO = 20f;
@@ -104,7 +95,6 @@ public final class Configuracion {
     public static final float TIEMPO_DESCONEXION = 6f;
     public static final String NOMBRE_JUEGO = "Elemental Escape";
 
-    // ---------------- Colores ----------------
     public static final Color FUEGO = new Color(0.98f, 0.32f, 0.12f, 1f);
     public static final Color FUEGO_CLARO = new Color(1f, 0.72f, 0.22f, 1f);
     public static final Color AGUA = new Color(0.16f, 0.55f, 0.98f, 1f);

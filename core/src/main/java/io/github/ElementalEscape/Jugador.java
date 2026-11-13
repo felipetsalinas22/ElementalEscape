@@ -3,11 +3,6 @@ package io.github.ElementalEscape;
 import com.badlogic.gdx.math.Rectangle;
 import java.util.List;
 
-/**
- * Un personaje (fuego o agua) con fisica de plataformas.
- * La fisica se resuelve primero en horizontal y despues en vertical,
- * que es la forma mas simple y estable para un juego 2D.
- */
 public class Jugador {
     public enum Tipo { FUEGO, AGUA }
 
@@ -20,18 +15,16 @@ public class Jugador {
     public boolean vivo = true;
     public boolean mirandoDerecha = true;
     public float tiempoAnim = 0f;
-    public float aplastado = 0f;       // 1 = aplastado, -1 = estirado
+    public float aplastado = 0f;
     public float tiempoReaparicion = 0f;
     public float tiempoCoyote = 0f;
     public float tiempoBufferSalto = 0f;
     public boolean estabaEnSuelo = false;
 
-    // Estado exclusivamente visual: no cambia el cuerpo de colision ni la fisica.
     public float tiempoInteraccion = 0f;
     public boolean celebrando = false;
     public boolean derrotado = false;
 
-    /** Evita contar dos veces la misma muerte (una por fisica y otra por mecanismos). */
     private boolean muerteContada = false;
 
     public float origenX, origenY;
@@ -71,23 +64,17 @@ public class Jugador {
     public void morir() {
         if (!vivo) return;
         vivo = false;
-        // La muerte se cuenta en Partida: si fue por un peligro, ahi se llama a
-        // contarMuerte; si fue por caer al vacio, actualizarJugador la detecta.
+
         muerteContada = false;
         velX = 0f;
         velY = 0f;
         tiempoReaparicion = Configuracion.TIEMPO_REAPARICION;
     }
 
-    /**
-     * Devuelve true cuando la muerte actual ya fue registrada por quien la provoco.
-     * Las caidas al vacio ocurren dentro de la fisica, por lo que llegan aqui sin contar.
-     */
     public boolean tiempoReaparicionYaContado() {
         return muerteContada;
     }
 
-    /** Permite que la partida registre una muerte producida dentro de la fisica. */
     public void marcarMuerteContada() {
         muerteContada = true;
     }
@@ -100,10 +87,6 @@ public class Jugador {
         return tipo == Tipo.FUEGO ? Configuracion.FUERZA_SALTO_FUEGO : Configuracion.FUERZA_SALTO_AGUA;
     }
 
-    /**
-     * Actualiza un paso de fisica.
-     * saltoPresionado es el instante en que se pulsa; saltoMantenido permite saltos mas altos.
-     */
     public void actualizar(float dt, boolean izquierda, boolean derecha, boolean saltoMantenido,
                            boolean saltoPresionado, List<Rectangle> solidos) {
         tiempoAnim += dt;
@@ -131,7 +114,6 @@ public class Jugador {
         velX = direccion * velocidadMaxima();
         if (direccion != 0f) mirandoDerecha = direccion > 0f;
 
-        // Salto con coyote time y buffer: se siente preciso sin ser complicado.
         if (tiempoBufferSalto > 0f && tiempoCoyote > 0f) {
             velY = fuerzaSalto();
             enSuelo = false;
@@ -148,7 +130,6 @@ public class Jugador {
             velY = -Configuracion.VELOCIDAD_CAIDA_MAXIMA;
         }
 
-        // ---- Movimiento horizontal ---- (dt fijo, por eso es estable)
         float xAntes = x;
         x += velX * dt;
         for (int i = 0; i < solidos.size(); i++) {
@@ -162,7 +143,6 @@ public class Jugador {
             }
         }
 
-        // ---- Movimiento vertical ----
         float yAntes = y;
         float velYAntes = velY;
         y += velY * dt;
@@ -183,7 +163,7 @@ public class Jugador {
                 y = s.y - alto;
                 velY = 0f;
             } else {
-                // Resolver por el lado con menos solape (placas moviles, empujones, etc.).
+
                 float solapeAbajo = (s.y + s.height) - y;
                 float solapeArriba = (y + alto) - s.y;
                 if (solapeAbajo <= solapeArriba) {
@@ -205,7 +185,6 @@ public class Jugador {
         if (y < -90f) morir();
     }
 
-    // Se ajusta al cargar un nivel de distinto tamano.
     public transient float anchoMundoActual = Configuracion.ANCHO_MUNDO;
     public transient float altoMundoActual = Configuracion.ALTO_MUNDO;
 }

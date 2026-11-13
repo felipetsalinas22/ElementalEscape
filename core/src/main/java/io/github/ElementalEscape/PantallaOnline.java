@@ -5,11 +5,6 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.ScreenUtils;
 
-/**
- * Lobby de multijugador directo.
- * El anfitrion abre el puerto y simula la partida (Fuego). El invitado se
- * conecta por IP (Agua). El codigo de sala es una clave, no un servidor central.
- */
 public class PantallaOnline extends PantallaBase {
     private String ip = "127.0.0.1";
     private String codigo = CodigoSala.generar();

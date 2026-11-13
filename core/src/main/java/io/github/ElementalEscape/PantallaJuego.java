@@ -12,10 +12,6 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Pantalla de juego. Sirve para campana, niveles sueltos, pruebas del editor y
- * modo online. En online el anfitrion simula y el invitado recibe Instantaneas.
- */
 public class PantallaJuego extends PantallaBase {
     public enum Origen { CAMPANA, NIVELES, EDITOR, ONLINE }
 
@@ -31,6 +27,7 @@ public class PantallaJuego extends PantallaBase {
     private FitViewport vistaMundo;
     private float camX;
     private float camY;
+    private float zoomCamara = 1f;
     private float tiempo;
     private float transicion = 1f;
 
@@ -57,7 +54,6 @@ public class PantallaJuego extends PantallaBase {
     private String avisoRed = "";
     private float avisoRedTiempo = 0f;
 
-    // Contexto para volver al editor sin perder archivo, cambios ni historial.
     private Nivel nivelEditor;
     private String archivoEditor;
     private boolean sucioEditor;
@@ -89,8 +85,7 @@ public class PantallaJuego extends PantallaBase {
 
     public static PantallaJuego pruebaEditor(Juego juego, Nivel nivel, String archivo,
                                              boolean sucio, List<String> historial, int posHistorial) {
-        // La partida recibe una copia: mover cajas o plataformas durante la
-        // prueba no debe modificar el diseno que sigue abierto en el editor.
+
         Nivel copia = copiarNivel(nivel);
         PantallaJuego pantalla = new PantallaJuego(juego, copia, 0, false,
             GestorRed.local(), Origen.EDITOR);
@@ -134,12 +129,12 @@ public class PantallaJuego extends PantallaBase {
         super.alRedimensionar(ancho, alto);
         if (vistaMundo != null) {
             vistaMundo.update(ancho, alto, true);
-            // Área de juego en la parte inferior, HUD arriba.
+
             vistaMundo.setScreenY(0);
             vistaMundo.setScreenHeight(Math.max(1, Math.round(vistaUI.getScreenHeight() * (VISTA_H / 540f))));
             vistaMundo.setScreenX(vistaUI.getScreenX());
             vistaMundo.setScreenWidth(vistaUI.getScreenWidth());
-            // offset Y dentro del viewport total: HUD ocupa franja superior
+
             int hudPx = Math.round(vistaUI.getScreenHeight() * (HUD_H / 540f));
             vistaMundo.setScreenY(vistaUI.getScreenY());
             vistaMundo.setScreenHeight(Math.max(1, vistaUI.getScreenHeight() - hudPx));
@@ -165,10 +160,6 @@ public class PantallaJuego extends PantallaBase {
             red.enviarEstado(partida, juego.getProgreso());
         }
     }
-
-    // =========================================================
-    //                     ACTUALIZACION
-    // =========================================================
 
     @Override
     protected void actualizar(float dt) {
@@ -365,7 +356,7 @@ public class PantallaJuego extends PantallaBase {
         entradaFuego.saltoPresionado = w && !wPrevio;
 
         if (red.esAnfitrion()) {
-            // El agua viene de la red; no se toca con las flechas locales.
+
         } else {
             entradaAgua.izquierda = izq;
             entradaAgua.derecha = der;
@@ -392,52 +383,85 @@ public class PantallaJuego extends PantallaBase {
     }
 
     private void actualizarCamara(float dt) {
-        if (partida == null) return;
+        if (partida == null || nivel == null) return;
         float cxF = partida.fuego.x + Configuracion.ANCHO_PERSONAJE / 2f;
         float cyF = partida.fuego.y + Configuracion.ALTO_PERSONAJE / 2f;
         float cxA = partida.agua.x + Configuracion.ANCHO_PERSONAJE / 2f;
         float cyA = partida.agua.y + Configuracion.ALTO_PERSONAJE / 2f;
-        float objetivoX = (cxF + cxA) / 2f;
-        float objetivoY = (cyF + cyA) / 2f;
-        // Si están muy separados, priorizar mantenerlos dentro del encuadre expandiendo el objetivo
-        float mitadAncho = VISTA_W / 2f;
-        float mitadAlto = VISTA_H / 2f;
-        if (nivel.ancho <= VISTA_W) objetivoX = nivel.ancho / 2f;
+
+        float minX = Math.min(cxF, cxA);
+        float maxX = Math.max(cxF, cxA);
+        float minY = Math.min(cyF, cyA);
+        float maxY = Math.max(cyF, cyA);
+        float objetivoX = (minX + maxX) / 2f;
+        float objetivoY = (minY + maxY) / 2f;
+
+        float necesarioX = (maxX - minX + Configuracion.MARGEN_CAMARA_X) / VISTA_W;
+        float necesarioY = (maxY - minY + Configuracion.MARGEN_CAMARA_Y) / VISTA_H;
+        float zoomObjetivo = Math.max(1f, Math.max(necesarioX, necesarioY));
+        zoomObjetivo = MathUtils.clamp(zoomObjetivo,
+            Configuracion.ZOOM_CAMARA_MIN, Configuracion.ZOOM_CAMARA_MAX);
+
+        float sz = Math.min(1f, dt * Configuracion.SUAVIZADO_ZOOM_CAMARA);
+        zoomCamara += (zoomObjetivo - zoomCamara) * sz;
+
+        float mitadAncho = VISTA_W * zoomCamara / 2f;
+        float mitadAlto = VISTA_H * zoomCamara / 2f;
+
+        if (nivel.ancho <= VISTA_W * zoomCamara) objetivoX = nivel.ancho / 2f;
         else objetivoX = MathUtils.clamp(objetivoX, mitadAncho, nivel.ancho - mitadAncho);
-        if (nivel.alto <= VISTA_H) objetivoY = nivel.alto / 2f;
+        if (nivel.alto <= VISTA_H * zoomCamara) objetivoY = nivel.alto / 2f;
         else objetivoY = MathUtils.clamp(objetivoY, mitadAlto, nivel.alto - mitadAlto);
 
-        float suavizado = Math.min(1f, dt * 6.5f);
+        float suavizado = Math.min(1f, dt * Configuracion.SUAVIZADO_CAMARA);
         camX += (objetivoX - camX) * suavizado;
         camY += (objetivoY - camY) * suavizado;
-        // Re-clamp tras suavizado
-        if (nivel.ancho <= VISTA_W) camX = nivel.ancho / 2f;
+
+        if (nivel.ancho <= VISTA_W * zoomCamara) camX = nivel.ancho / 2f;
         else camX = MathUtils.clamp(camX, mitadAncho, nivel.ancho - mitadAncho);
-        if (nivel.alto <= VISTA_H) camY = nivel.alto / 2f;
+        if (nivel.alto <= VISTA_H * zoomCamara) camY = nivel.alto / 2f;
         else camY = MathUtils.clamp(camY, mitadAlto, nivel.alto - mitadAlto);
 
         float sacudida = 0f;
         if (juego.getAjustes().sacudida) sacudida = partida.sacudida;
         float sx = (float) Math.sin(tiempo * 71f) * sacudida;
         float sy = (float) Math.cos(tiempo * 63f) * sacudida * 0.7f;
+        camaraMundo.zoom = zoomCamara;
         camaraMundo.position.set(camX + sx, camY + sy, 0f);
         camaraMundo.update();
     }
 
     private void centrarCamara(boolean instantaneo) {
         if (nivel == null) return;
-        float x = nivel.ancho <= VISTA_W ? nivel.ancho / 2f : MathUtils.clamp(nivel.ancho / 2f, VISTA_W / 2f, nivel.ancho - VISTA_W / 2f);
-        float y = nivel.alto <= VISTA_H ? nivel.alto / 2f : MathUtils.clamp(nivel.alto / 2f, VISTA_H / 2f, nivel.alto - VISTA_H / 2f);
-        if (instantaneo) { camX = x; camY = y; }
+        if (partida != null) {
+            float cxF = partida.fuego.x + Configuracion.ANCHO_PERSONAJE / 2f;
+            float cyF = partida.fuego.y + Configuracion.ALTO_PERSONAJE / 2f;
+            float cxA = partida.agua.x + Configuracion.ANCHO_PERSONAJE / 2f;
+            float cyA = partida.agua.y + Configuracion.ALTO_PERSONAJE / 2f;
+            float minX = Math.min(cxF, cxA), maxX = Math.max(cxF, cxA);
+            float minY = Math.min(cyF, cyA), maxY = Math.max(cyF, cyA);
+            float z = Math.max(1f, Math.max((maxX - minX + Configuracion.MARGEN_CAMARA_X) / VISTA_W,
+                (maxY - minY + Configuracion.MARGEN_CAMARA_Y) / VISTA_H));
+            zoomCamara = MathUtils.clamp(z, Configuracion.ZOOM_CAMARA_MIN, Configuracion.ZOOM_CAMARA_MAX);
+            camX = (minX + maxX) / 2f;
+            camY = (minY + maxY) / 2f;
+        } else {
+            zoomCamara = 1f;
+            camX = nivel.ancho / 2f;
+            camY = nivel.alto / 2f;
+        }
+        float mitadAncho = VISTA_W * zoomCamara / 2f;
+        float mitadAlto = VISTA_H * zoomCamara / 2f;
+        if (nivel.ancho <= VISTA_W * zoomCamara) camX = nivel.ancho / 2f;
+        else camX = MathUtils.clamp(camX, mitadAncho, nivel.ancho - mitadAncho);
+        if (nivel.alto <= VISTA_H * zoomCamara) camY = nivel.alto / 2f;
+        else camY = MathUtils.clamp(camY, mitadAlto, nivel.alto - mitadAlto);
         if (camaraMundo != null) {
+            camaraMundo.zoom = zoomCamara;
             camaraMundo.position.set(camX, camY, 0f);
             camaraMundo.update();
         }
     }
-
-    // =========================================================
-    //                       ACCIONES
-    // =========================================================
 
     private void reiniciarPartida() {
         if (nivel == null) return;
@@ -512,10 +536,6 @@ public class PantallaJuego extends PantallaBase {
         }
     }
 
-    // =========================================================
-    //                       DIBUJO
-    // =========================================================
-
     @Override
     protected void dibujar(float delta) {
         if (partida == null) {
@@ -524,20 +544,19 @@ public class PantallaJuego extends PantallaBase {
         }
 
         ScreenUtils.clear(0.02f, 0.03f, 0.06f, 1f);
-        // Vista de mundo: ocupa la parte inferior (HUD reservado arriba)
+
         aplicarVistaMundo();
         camaraMundo.update();
         lote.setProjectionMatrix(camaraMundo.combined);
         lote.begin();
-        float vw = VISTA_W;
-        float vh = VISTA_H;
+        float vw = VISTA_W * camaraMundo.zoom;
+        float vh = VISTA_H * camaraMundo.zoom;
         float vx = camaraMundo.position.x - vw / 2f;
         float vy = camaraMundo.position.y - vh / 2f;
-        dibujante.fondo(nivel.tema, tiempo, vx - vw, vy - vh, vw * 3f, vh * 3f);
+        dibujante.fondo(nivel.tema, tiempo, vx, vy, vw, vh, nivel.ancho, nivel.alto);
         dibujante.mundo(partida, tiempo, red.esCliente());
         lote.end();
 
-        // HUD + overlays en el viewport UI completo (independiente del mundo)
         aplicarVistaUI();
         lote.begin();
         dibujante.dibujarHUDSuperior(partida, red, juego, red.esCliente());
@@ -616,7 +635,7 @@ public class PantallaJuego extends PantallaBase {
         Puntuacion.ResultadoNivel r = partida.resultado;
         if (r == null) return;
         Dibujo.rectangulo(lote, 0f, 0f, 960f, 540f, new Color(0f, 0f, 0f, 0.60f));
-        // Los protagonistas enmarcan el resultado y refuerzan la direccion artistica.
+
         Dibujo.brillo(lote, 82f, 250f, 180f, new Color(1f, 0.34f, 0.10f, 0.13f));
         Dibujo.brillo(lote, 878f, 250f, 180f, new Color(0.20f, 0.60f, 1f, 0.13f));
         dibujante.dibujarAvatarMenu(82f, 210f, true, tiempo, 1.45f);
@@ -744,10 +763,6 @@ public class PantallaJuego extends PantallaBase {
             Configuracion.TEXTO_SUAVE, 0.62f);
     }
 
-    // =========================================================
-    //                   ACCIONES DE INTERFAZ
-    // =========================================================
-
     private void accionPausa() {
         if (red.esCliente()) {
             red.enviarComando("PAUSA");
@@ -787,8 +802,7 @@ public class PantallaJuego extends PantallaBase {
 
     @Override
     public void dispose() {
-        // Si se sale por AJUSTES/MENU o se cierra la ventana, no dejamos el
-        // socket ni el hilo de red vivos en segundo plano.
+
         if (red != null && !red.esLocal()) red.cerrar();
         super.dispose();
     }

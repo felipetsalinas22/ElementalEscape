@@ -18,18 +18,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-/**
- * Red TCP directa para dos computadoras.
- *
- * Arquitectura:
- *   Anfitrion (SERVIDOR): simula Partida y manda Instantaneas 20 veces por segundo.
- *   Invitado (CLIENTE): manda su entrada 30 veces por segundo y predice su personaje.
- *
- * Es una conexion DIRECTA: no hay servidor central. Para jugar por internet hay
- * que abrir el puerto 54555 en el router del anfitrion (port forwarding) o usar
- * una VPN tipo ZeroTier/Tailscale/Radmin. El codigo de sala es una clave de
- * acceso, no un servicio de descubrimiento.
- */
 public class GestorRed {
     public enum Modo { LOCAL, SERVIDOR, CLIENTE }
 
@@ -83,7 +71,6 @@ public class GestorRed {
     public boolean esAnfitrion() { return modo == Modo.SERVIDOR; }
     public boolean esCliente() { return modo == Modo.CLIENTE; }
 
-    /** Abre el puerto y espera a un invitado. Se puede llamar varias veces tras desconexiones. */
     public void iniciarServidor(String codigoSala) {
         cerrar();
         modo = Modo.SERVIDOR;
@@ -104,7 +91,6 @@ public class GestorRed {
         hilo.start();
     }
 
-    /** Se conecta al anfitrion. Si se cae, reintenta solo mientras la pantalla siga abierta. */
     public void iniciarCliente(String ip, String codigoSala) {
         cerrar();
         modo = Modo.CLIENTE;
@@ -124,10 +110,6 @@ public class GestorRed {
         hilo.setDaemon(true);
         hilo.start();
     }
-
-    // =========================================================
-    //                    HILOS DE RED
-    // =========================================================
 
     private void bucleServidor() {
         try {
@@ -318,16 +300,10 @@ public class GestorRed {
         }
     }
 
-    // =========================================================
-    //                 ENVIO / RECEPCION
-    // =========================================================
-
-    /** El anfitrion envia su simulacion autoritativa. */
     public void enviarEstado(Partida partida, Progreso progreso) {
         enviarEstado(partida, progreso, null);
     }
 
-    /** Variante que adjunta eventos acumulados entre dos envios (sonidos/particulas). */
     public void enviarEstado(Partida partida, Progreso progreso, String[] eventos) {
         if (!conectado || partida == null) return;
         try {
@@ -344,7 +320,6 @@ public class GestorRed {
         }
     }
 
-    /** El anfitrion envia el nivel completo (campana o personalizado). */
     public void enviarNivel(Nivel nivel, int indice, boolean campana) {
         if (!conectado || nivel == null) return;
         try {
@@ -358,7 +333,6 @@ public class GestorRed {
         }
     }
 
-    /** El invitado envia su input. */
     public void enviarEntrada(Partida.Entrada e) {
         if (modo != Modo.CLIENTE || !conectado || e == null) return;
         enviarMensaje("ENTRADA|" + (e.izquierda ? "1" : "0") + "|" + (e.derecha ? "1" : "0")
@@ -401,10 +375,6 @@ public class GestorRed {
         in.readFully(datos);
         return new String(datos, "UTF-8");
     }
-
-    // =========================================================
-    //                    CONSULTA PARA PANTALLAS
-    // =========================================================
 
     public Partida.Entrada consumirEntradaRemota() {
         Partida.Entrada copia = new Partida.Entrada();

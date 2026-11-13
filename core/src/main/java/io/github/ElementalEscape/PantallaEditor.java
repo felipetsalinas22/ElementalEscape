@@ -15,17 +15,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Editor de niveles completo, dibujado con interfaz inmediata.
- *
- * - Click izquierdo: seleccionar, colocar o arrastrar (segun la herramienta).
- * - Click derecho / central: mover la camara.
- * - Rueda no disponible: usa + y - para zoom, F para encuadrar.
- * - Ctrl+Z / Ctrl+Y: deshacer y rehacer.
- * - Supr: borrar el objeto seleccionado.
- *
- * Los cambios se guardan como JSON en la carpeta externa del usuario.
- */
 public class PantallaEditor extends PantallaBase {
     private enum Herramienta {
         SELECCION, PLATAFORMA, MURO, LAVA, AGUA, GEMA, PLACA, PALANCA, PUERTA,
@@ -91,7 +80,7 @@ public class PantallaEditor extends PantallaBase {
     private boolean esNivelHistoria = false;
     private List<GestorNiveles.Entrada> listaNiveles = new ArrayList<>();
     private int paginaSelector = 0;
-    private int pestanaSelector = 0; // 0 = Mis niveles, 1 = Historia
+    private int pestanaSelector = 0;
 
     public PantallaEditor(Juego juego, Nivel nivelInicial) {
         super(juego);
@@ -111,7 +100,6 @@ public class PantallaEditor extends PantallaBase {
         this.posHistorialRestaurar = posHistorial;
     }
 
-    /** Vuelve al editor conservando archivo, cambios y historial tras una prueba. */
     public static PantallaEditor desdePrueba(Juego juego, Nivel nivel, String archivo,
                                              boolean sucio, List<String> historial, int posHistorial) {
         return new PantallaEditor(juego, nivel, archivo, sucio, historial, posHistorial);
@@ -194,10 +182,6 @@ public class PantallaEditor extends PantallaBase {
         return "";
     }
 
-    // =========================================================
-    //                     ACTUALIZACION
-    // =========================================================
-
     @Override
     protected void actualizar(float delta) {
         tiempo += delta;
@@ -250,7 +234,6 @@ public class PantallaEditor extends PantallaBase {
             estado = "La cuadricula esta siempre visible para ayudarte a alinear.";
         }
 
-        // Flechas: mueven el objeto seleccionado o la camara.
         float paso = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
             || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)
             ? 50f : Configuracion.PASO_EDITOR;
@@ -272,7 +255,6 @@ public class PantallaEditor extends PantallaBase {
     private void actualizarRaton() {
         boolean enCanvas = ui.dentro(150f, 60f, 590f, 440f);
 
-        // Camara con boton derecho o central.
         if (enCanvas && (Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)
             || Gdx.input.isButtonJustPressed(Input.Buttons.MIDDLE))) {
             arrastrandoCamara = true;
@@ -348,10 +330,6 @@ public class PantallaEditor extends PantallaBase {
         limitarCamara();
         estado = "Vista general. F encuadra, +/- ajusta el zoom.";
     }
-
-    // =========================================================
-    //                    SELECCION Y EDICION
-    // =========================================================
 
     private void seleccionarEn(float x, float y) {
         tipoSel = TipoSeleccion.NINGUNO;
@@ -632,11 +610,6 @@ public class PantallaEditor extends PantallaBase {
         return max + 1;
     }
 
-    /**
-     * Al colocar un control nuevo, si hay una puerta que todavia no tiene
-     * ningun boton ni palanca, se reutiliza su ID. Asi el primer control y la
-     * primera puerta quedan enlazados sin que el usuario tenga que ajustar IDs.
-     */
     private int idParaControlNuevo() {
         for (Nivel.Puerta p : nivel.puertas) {
             if (p.id > 0 && contarControles(p.id) == 0) return p.id;
@@ -644,7 +617,6 @@ public class PantallaEditor extends PantallaBase {
         return siguienteId();
     }
 
-    /** Al colocar una puerta nueva, reutiliza el ID de un control huerfano. */
     private int idParaPuertaNueva() {
         for (Nivel.Boton b : nivel.botones) {
             if (b.id > 0 && contarPuertas(b.id) == 0) return b.id;
@@ -709,10 +681,6 @@ public class PantallaEditor extends PantallaBase {
         return nuevo;
     }
 
-    // =========================================================
-    //                       HISTORIAL
-    // =========================================================
-
     private String instantanea() {
         return json.toJson(nivel);
     }
@@ -771,16 +739,12 @@ public class PantallaEditor extends PantallaBase {
         }
     }
 
-    // =========================================================
-    //                     GUARDAR / CARGAR
-    // =========================================================
-
     private void guardar(boolean permitirSobrescribir) {
         try {
             nivel.normalizarEditor();
             GestorNiveles gestor = juego.getGestorNiveles();
             if (esNivelHistoria || archivoActual.isEmpty()) {
-                // Nivel de historia o nuevo: guardar en carpeta de usuario
+
                 String existente = gestor.archivoConNombre(nivel.nombre);
                 if (!existente.isEmpty() && !permitirSobrescribir) {
                     estado = "Ya existe \"" + nivel.nombre + "\". Sobrescribe o cambia el nombre.";
@@ -821,19 +785,48 @@ public class PantallaEditor extends PantallaBase {
         if (sucio) {
             confirmar = "NUEVO";
         } else {
-            crearNuevo();
+            Gdx.input.getTextInput(new Input.TextInputListener() {
+                @Override public void input(String texto) {
+                    String nombre = texto == null ? "" : texto.trim();
+                    if (nombre.isEmpty()) {
+                        estado = "El nombre del nivel es obligatorio.";
+                        return;
+                    }
+                    if (nombre.contains("/") || nombre.contains("\\")) {
+                        estado = "El nombre no puede contener / ni \\.";
+                        return;
+                    }
+                    crearNuevoConNombre(nombre);
+                }
+                @Override public void canceled() { }
+            }, "Nombre del nuevo nivel", "Nuevo nivel", "Nombre obligatorio");
         }
+    }
+
+    private void crearNuevoConNombre(String nombre) {
+        nivel = nivelNuevo();
+        nivel.nombre = nombre;
+        archivoActual = "";
+        esNivelHistoria = false;
+        tipoSel = TipoSeleccion.NINGUNO;
+        indiceSel = -1;
+        sucio = true;
+        encuadrarNivel();
+        reiniciarHistorial();
+        estado = "Nivel \"" + recortar(nombre, 28) + "\" creado. Ajusta ancho/alto y guarda cuando este listo.";
+        confirmar = "";
     }
 
     private void crearNuevo() {
         nivel = nivelNuevo();
         archivoActual = "";
+        esNivelHistoria = false;
         tipoSel = TipoSeleccion.NINGUNO;
         indiceSel = -1;
         sucio = false;
         encuadrarNivel();
         reiniciarHistorial();
-        estado = "Nivel nuevo creado.";
+        estado = "Nivel nuevo creado. Puedes cambiar nombre y dimensiones en el panel.";
         confirmar = "";
     }
 
@@ -890,7 +883,7 @@ public class PantallaEditor extends PantallaBase {
         }
         try {
             if (entrada.archivo != null && entrada.archivo.startsWith("HISTORIA:")) {
-                // Nivel de la historia: cargar como copia editable
+
                 Nivel copia = json.fromJson(Nivel.class, json.toJson(entrada.nivel));
                 if (copia == null) throw new IOException("No se pudo copiar el nivel de la historia.");
                 copia.normalizarEditor();
@@ -947,10 +940,6 @@ public class PantallaEditor extends PantallaBase {
         cambiarPantalla(PantallaJuego.pruebaEditor(juego, nivel, archivoActual, sucio,
             historial, posHistorial));
     }
-
-    // =========================================================
-    //                     PROPIEDADES
-    // =========================================================
 
     private void pedirTexto(String titulo, String valor, final CambioTexto cambio) {
         Gdx.input.getTextInput(new Input.TextInputListener() {
@@ -1034,7 +1023,6 @@ public class PantallaEditor extends PantallaBase {
         Dibujo.texto(lote, fuente, "DATOS DEL NIVEL", 752f, 486f, Configuracion.DORADO, 0.72f);
         float y = 458f;
 
-        // Nombre
         Dibujo.texto(lote, fuente, "NOMBRE", 752f, y, Configuracion.TEXTO_SUAVE, 0.54f);
         Dibujo.panel(lote, 750f, y - 32f, 192f, 26f, new Color(0.08f, 0.10f, 0.16f, 0.98f),
             new Color(0.28f, 0.38f, 0.54f, 1f));
@@ -1050,7 +1038,6 @@ public class PantallaEditor extends PantallaBase {
         }
         y -= 72f;
 
-        // Autor
         Dibujo.texto(lote, fuente, "AUTOR", 752f, y, Configuracion.TEXTO_SUAVE, 0.54f);
         Dibujo.panel(lote, 750f, y - 32f, 192f, 26f, new Color(0.08f, 0.10f, 0.16f, 0.98f),
             new Color(0.28f, 0.38f, 0.54f, 1f));
@@ -1067,7 +1054,6 @@ public class PantallaEditor extends PantallaBase {
         }
         y -= 72f;
 
-        // Pista
         Dibujo.texto(lote, fuente, "PISTA", 752f, y, Configuracion.TEXTO_SUAVE, 0.54f);
         Dibujo.panel(lote, 750f, y - 32f, 192f, 26f, new Color(0.08f, 0.10f, 0.16f, 0.98f),
             new Color(0.28f, 0.38f, 0.54f, 1f));
@@ -1084,7 +1070,6 @@ public class PantallaEditor extends PantallaBase {
         }
         y -= 72f;
 
-        // Tema
         Dibujo.texto(lote, fuente, "TEMA", 752f, y, Configuracion.TEXTO_SUAVE, 0.54f);
         Dibujo.panel(lote, 750f, y - 32f, 192f, 26f, new Color(0.08f, 0.10f, 0.16f, 0.98f),
             new Color(0.28f, 0.38f, 0.54f, 1f));
@@ -1118,7 +1103,6 @@ public class PantallaEditor extends PantallaBase {
         Dibujo.texto(lote, fuente, "F encuadra, +/- zoom", 752f, y - 6f, Configuracion.TEXTO_SUAVE, 0.52f);
         Dibujo.texto(lote, fuente, "HUD fijo, mundo debajo", 752f, y - 20f, Configuracion.TEXTO_SUAVE, 0.52f);
     }
-
 
     private void cambiarAnchoNivel(float d) {
         float nuevo = MathUtils.clamp(nivel.ancho + d, Configuracion.ANCHO_MINIMO_NIVEL, Configuracion.ANCHO_MAXIMO_NIVEL);
@@ -1424,10 +1408,6 @@ public class PantallaEditor extends PantallaBase {
         return "AMBOS";
     }
 
-    // =========================================================
-    //                       DIBUJO
-    // =========================================================
-
     @Override
     protected void alRedimensionar(int ancho, int alto) {
         super.alRedimensionar(ancho, alto);
@@ -1465,8 +1445,8 @@ public class PantallaEditor extends PantallaBase {
     private void dibujarMundo() {
         float visibleAncho = VISTA_W * zoom;
         float visibleAlto = VISTA_H * zoom;
-        dibujante.fondo(nivel.tema, tiempo, camX - visibleAncho / 2f - 200f, camY - visibleAlto / 2f - 200f,
-            visibleAncho + 400f, visibleAlto + 400f);
+        dibujante.fondo(nivel.tema, tiempo, camX - visibleAncho / 2f, camY - visibleAlto / 2f,
+            visibleAncho, visibleAlto, nivel.ancho, nivel.alto);
 
         Color fuera = new Color(0.01f, 0.02f, 0.04f, 0.88f);
         Dibujo.rectangulo(lote, camX - visibleAncho, camY - visibleAlto, visibleAncho * 3f, visibleAlto, fuera);
@@ -1573,8 +1553,7 @@ public class PantallaEditor extends PantallaBase {
     private void dibujarInterfaz() {
         boolean modal = selectorAbierto || !confirmar.isEmpty();
         if (modal) {
-            // Fondo visible pero sin interacción: no limpiamos ui.clic para que
-            // los botones del diálogo activo puedan recibirlo.
+
             dibujarBarraSuperiorFondo();
             dibujarPaletaFondo();
             dibujarPropiedadesFondo();
@@ -1634,8 +1613,7 @@ public class PantallaEditor extends PantallaBase {
         Dibujo.textoCentrado(lote, fuente, "HERRAMIENTAS", 76f, 480f, Configuracion.DORADO, 0.62f);
         Herramienta[] lista = Herramienta.values();
         for (int i = 0; i < lista.length; i++) {
-            // 24 px por fila: las 16 herramientas quedan dentro del panel y
-            // por encima de la barra de estado inferior.
+
             float y = 450f - i * 24f;
             String texto = nombreHerramienta(lista[i]);
             if (ui.botonActivo(texto, 14f, y, 124f, 23f) && herramienta != lista[i]) {
@@ -1689,7 +1667,6 @@ public class PantallaEditor extends PantallaBase {
             new Color(0.42f, 0.55f, 0.78f, 1f));
         Dibujo.textoCentrado(lote, fuente, "CARGAR NIVEL", 480f, 468f, Configuracion.DORADO, 1.05f);
 
-        // Pestañas
         boolean tabMis = pestanaSelector == 0;
         boolean tabHis = pestanaSelector == 1;
         if (ui.botonColor("MIS NIVELES", 140f, 432f, 180f, 30f,
@@ -1705,7 +1682,6 @@ public class PantallaEditor extends PantallaBase {
                 : "Niveles de la campaña. Se abren como copia editable; al guardar se superpone en campaña.",
             140f, 418f, Configuracion.TEXTO_SUAVE, 0.54f);
 
-        // Lista filtrada
         List<GestorNiveles.Entrada> visibles = filtrarSelector(pestanaSelector);
         if (visibles.isEmpty()) {
             Dibujo.textoCentrado(lote, fuente, tabMis
@@ -1728,10 +1704,11 @@ public class PantallaEditor extends PantallaBase {
                 } else {
                     Dibujo.texto(lote, fuente, recortar(e.nivel.nombre, 32), 114f, y + 24f,
                         Configuracion.TEXTO, 0.70f);
-                    Dibujo.texto(lote, fuente, Nivel.nombreTema(e.nivel.tema), 420f, y + 24f,
+                    Dibujo.texto(lote, fuente, Math.round(e.nivel.ancho) + "x" + Math.round(e.nivel.alto)
+                        + "  " + Nivel.nombreTema(e.nivel.tema), 360f, y + 24f,
                         Configuracion.TEXTO_SUAVE, 0.56f);
                     String tag = (e.archivo != null && e.archivo.startsWith("HISTORIA:")) ? "Historia" : "Personal";
-                    Dibujo.texto(lote, fuente, tag, 640f, y + 24f, Configuracion.TEXTO_SUAVE, 0.54f);
+                    Dibujo.texto(lote, fuente, tag, 660f, y + 24f, Configuracion.TEXTO_SUAVE, 0.54f);
                 }
                 if (e.nivel != null) {
                     if (ui.boton("ABRIR", 760f, y + 5f, 84f, 28f)) {
@@ -1811,7 +1788,23 @@ public class PantallaEditor extends PantallaBase {
             String accion = confirmar;
             confirmar = "";
             if ("SALIR".equals(accion)) salirDelEditor();
-            else if ("NUEVO".equals(accion)) crearNuevo();
+            else if ("NUEVO".equals(accion)) {
+                Gdx.input.getTextInput(new Input.TextInputListener() {
+                    @Override public void input(String texto) {
+                        String nombre = texto == null ? "" : texto.trim();
+                        if (nombre.isEmpty()) {
+                            estado = "El nombre del nivel es obligatorio.";
+                            return;
+                        }
+                        if (nombre.contains("/") || nombre.contains("\\")) {
+                            estado = "El nombre no puede contener / ni \\.";
+                            return;
+                        }
+                        crearNuevoConNombre(nombre);
+                    }
+                    @Override public void canceled() { }
+                }, "Nombre del nuevo nivel", "Nuevo nivel", "Nombre obligatorio");
+            }
             else if ("CARGAR".equals(accion)) abrirSelectorAhora();
             else if ("BORRAR_ARCHIVO".equals(accion)) borrarArchivo();
             else if ("SOBRESCRIBIR".equals(accion)) guardar(true);

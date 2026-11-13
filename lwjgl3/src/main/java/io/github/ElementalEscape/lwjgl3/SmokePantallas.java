@@ -16,13 +16,6 @@ import io.github.ElementalEscape.PantallaNiveles;
 import io.github.ElementalEscape.PantallaOnline;
 import io.github.ElementalEscape.PantallaRanking;
 
-/**
- * Prueba de humo de las pantallas con un contexto OpenGL real.
- *
- * Recorre menu, niveles, online, ranking, ajustes, editor y juego local.
- * No simula clics: sirve para detectar excepciones al crear, mostrar, dibujar
- * y cerrar cada pantalla. Se ejecuta con: gradlew :lwjgl3:pruebasUI
- */
 public class SmokePantallas extends Juego {
     private float acumulado = 0f;
     private int etapa = 0;
@@ -116,8 +109,7 @@ public class SmokePantallas extends Juego {
             carpeta.mkdirs();
             Pixmap pixmap = Pixmap.createFromFrameBuffer(0, 0,
                 Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight());
-            // glReadPixels devuelve la imagen de abajo hacia arriba; se corrige
-            // antes de guardar para que las capturas se puedan revisar.
+
             Pixmap normal = voltearVertical(pixmap);
             pixmap.dispose();
             FileHandle archivo = carpeta.child(nombres[indice] + ".png");

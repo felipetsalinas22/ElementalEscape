@@ -7,11 +7,6 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Seleccion de niveles.
- * Pestana de campana con desbloqueo progresivo y pestana de niveles creados
- * por el usuario (leidos de la carpeta JSON externa).
- */
 public class PantallaNiveles extends PantallaBase {
     private int pestana = 0;
     private float tiempo = 0f;
@@ -138,7 +133,7 @@ public class PantallaNiveles extends PantallaBase {
                             NivelesIntegrados.nombre(i));
                         cambiarPantalla(PantallaJuego.nivelSuelto(juego, nivelParaJugar, i, true));
                     } catch (Exception e) {
-                        // Si falla la superposicion, usar el integrado directamente
+
                         cambiarPantalla(PantallaJuego.nivelSuelto(juego,
                             NivelesIntegrados.crear(i), i, true));
                     }
@@ -179,11 +174,11 @@ public class PantallaNiveles extends PantallaBase {
                 continue;
             }
             Nivel n = entrada.nivel;
-            Dibujo.texto(lote, fuente, recortar(n.nombre, 34), 50f, y + 27f,
+            Dibujo.texto(lote, fuente, recortar(n.nombre, 30), 50f, y + 27f,
                 Configuracion.TEXTO, 0.76f);
-            Dibujo.texto(lote, fuente, Nivel.nombreTema(n.tema), 430f, y + 27f,
-                Configuracion.TEXTO_SUAVE, 0.60f);
-            Dibujo.texto(lote, fuente, "Autor: " + (n.autor == null || n.autor.isEmpty() ? "-" : n.autor),
+            Dibujo.texto(lote, fuente, Nivel.nombreTema(n.tema) + "  " + Math.round(n.ancho) + "x" + Math.round(n.alto),
+                360f, y + 27f, Configuracion.TEXTO_SUAVE, 0.60f);
+            Dibujo.texto(lote, fuente, "Autor: " + (n.autor == null || n.autor.isEmpty() ? "-" : recortar(n.autor, 14)),
                 620f, y + 27f, Configuracion.TEXTO_SUAVE, 0.58f);
             if (ui.boton("JUGAR", 760f, y + 7f, 74f, 30f)) {
                 cambiarPantalla(PantallaJuego.nivelSuelto(juego, n, 0, false));
@@ -200,7 +195,6 @@ public class PantallaNiveles extends PantallaBase {
         if (ui.boton(">", 580f, 72f, 50f, 30f) && pagina < maxPagina) pagina++;
     }
 
-    /** Click manual sobre una tarjeta: consume el clic para que no active otra cosa. */
     private boolean zonaClic(float x, float y, float ancho, float alto) {
         if (ui.clic && ui.dentro(x, y, ancho, alto)) {
             ui.clic = false;

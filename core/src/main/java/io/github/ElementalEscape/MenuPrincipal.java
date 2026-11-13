@@ -5,10 +5,6 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.ScreenUtils;
 
-/**
- * Menu principal. La composicion usa a los dos personajes como protagonistas,
- * botones grandes con areas de clic claras y un panel de progreso legible.
- */
 public class MenuPrincipal extends PantallaBase {
     private float tiempo = 0f;
     private float entrada = 0f;
@@ -59,11 +55,10 @@ public class MenuPrincipal extends PantallaBase {
     }
 
     private void dibujarFondo() {
-        // Cielo nocturno con una direccion artistica comun al resto del juego.
+
         Dibujo.rectangulo(lote, 0f, 0f, 960f, 540f, new Color(0.02f, 0.03f, 0.07f, 1f));
         Dibujo.degradado(lote, 0f, 0f, 960f, 500f, new Color(0.13f, 0.09f, 0.24f, 1f));
 
-        // Estrellas y polvo magico.
         for (int i = 0; i < 66; i++) {
             float x = (i * 149f + 37f) % 960f;
             float y = (i * 83f + 19f) % 540f;
@@ -72,7 +67,6 @@ public class MenuPrincipal extends PantallaBase {
                 new Color(0.78f, 0.88f, 1f, 0.10f * pulso));
         }
 
-        // Arcos del templo, muy oscuros para no competir con el titulo.
         for (int i = 0; i < 5; i++) {
             float cx = 90f + i * 195f;
             float base = 112f;
@@ -83,7 +77,6 @@ public class MenuPrincipal extends PantallaBase {
             Dibujo.rectangulo(lote, cx - 8f, base, 16f, 3f, new Color(0.35f, 0.42f, 0.58f, 0.25f));
         }
 
-        // Auras elementales: encuadran a los personajes sin tapar los botones.
         float flotarF = (float) Math.sin(tiempo * 1.2f) * 7f;
         Dibujo.brillo(lote, 155f, 430f + flotarF, 220f, new Color(1f, 0.28f, 0.08f, 0.18f));
         Dibujo.anillo(lote, 155f, 428f + flotarF, 200f, new Color(1f, 0.52f, 0.16f, 0.12f));
@@ -91,7 +84,6 @@ public class MenuPrincipal extends PantallaBase {
         Dibujo.brillo(lote, 805f, 430f + flotarA, 220f, new Color(0.16f, 0.55f, 1f, 0.17f));
         Dibujo.anillo(lote, 805f, 428f + flotarA, 200f, new Color(0.35f, 0.80f, 1f, 0.12f));
 
-        // Linea de horizonte y niebla inferior.
         Dibujo.rectangulo(lote, 0f, 112f, 960f, 1f, new Color(0.42f, 0.54f, 0.78f, 0.20f));
         Dibujo.degradado(lote, 0f, 0f, 960f, 130f, new Color(0.02f, 0.04f, 0.09f, 1f));
         for (int i = 0; i < 8; i++) {
@@ -116,8 +108,6 @@ public class MenuPrincipal extends PantallaBase {
         Dibujo.textoCentrado(lote, fuente, "COOPERATIVO PARA DOS JUGADORES", 480f, 438f,
             new Color(0.74f, 0.84f, 1f, alpha), 0.72f);
 
-        // Los dos personajes en pose de presentacion. Quedan por encima de los
-        // botones para que sus pies y sombras no se recorten.
         Dibujo.elipse(lote, 105f, 416f, 100f, 16f, new Color(0f, 0f, 0f, 0.35f));
         Dibujo.elipse(lote, 755f, 416f, 100f, 16f, new Color(0f, 0f, 0f, 0.35f));
         arte.dibujarAvatarMenu(155f, 424f, true, tiempo, 2.1f);
@@ -125,8 +115,7 @@ public class MenuPrincipal extends PantallaBase {
     }
 
     private void dibujarBotones() {
-        // Una sola columna centrada: el mismo rectangulo se usa para dibujar y
-        // para detectar el clic, por lo que no hay desfases al redimensionar.
+
         final float centroX = 480f;
         final float ancho = 360f;
         final float alto = 38f;

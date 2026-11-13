@@ -4,7 +4,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 
-/** Sistema de particulas muy liviano (sin librerias externas). */
 public class Particulas {
     private static final int MAXIMAS = 420;
 

@@ -4,11 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.AudioDevice;
 import java.util.concurrent.LinkedBlockingQueue;
 
-/**
- * Sonidos generados por codigo (sin archivos externos).
- * Si el equipo no tiene salida de audio, el juego sigue funcionando en silencio.
- * El hilo de audio es independiente para que writeSamples nunca bloquee el render.
- */
 public class Sonido {
     private AudioDevice dispositivo;
     private volatile boolean activo = true;

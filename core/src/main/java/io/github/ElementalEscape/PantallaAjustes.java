@@ -5,7 +5,6 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.ScreenUtils;
 
-/** Opciones de audio, efectos, video y borrado del progreso. */
 public class PantallaAjustes extends PantallaBase {
     private float tiempo = 0f;
     private boolean confirmarBorrado = false;

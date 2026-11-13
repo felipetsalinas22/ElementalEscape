@@ -5,13 +5,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 
-/**
- * Pruebas ejecutables sin abrir una ventana ni crear una aplicacion LibGDX.
- * Se lanzan con: gradlew.bat :core:pruebas
- *
- * Cubren validacion de niveles, fisica basica, mecanismos, puntuacion,
- * persistencia JSON y el protocolo de red en localhost.
- */
 public final class Pruebas {
     private static int pruebas = 0;
     private static int fallos = 0;
@@ -39,10 +32,6 @@ public final class Pruebas {
         }
         System.out.println("RESULTADO: TODO OK");
     }
-
-    // =========================================================
-    //                       NIVELES
-    // =========================================================
 
     private static void probarNivelesIntegrados() {
         seccion("Niveles integrados");
@@ -82,10 +71,6 @@ public final class Pruebas {
         }
         return sb.toString();
     }
-
-    // =========================================================
-    //                        FISICA
-    // =========================================================
 
     private static void probarFisica() {
         seccion("Fisica");
@@ -161,10 +146,6 @@ public final class Pruebas {
             "se puede volver a completar el mismo nivel tras reiniciar");
     }
 
-    // =========================================================
-    //                     MECANISMOS
-    // =========================================================
-
     private static void probarMecanismos() {
         seccion("Mecanismos");
         Nivel n = nivelDePrueba();
@@ -198,7 +179,6 @@ public final class Pruebas {
         comprobar(ps.palancasActivas[1], "la segunda palanca se activa en orden");
         comprobar(ps.puertasAbiertas[0], "la puerta TODAS se abre al completar la secuencia");
 
-        // Una caja pesada solo debe moverse si empujan los dos personajes.
         Nivel conCaja = nivelDePrueba();
         conCaja.agregar(new Nivel.Caja(300f, 30f, true));
         Partida pc = new Partida(conCaja, 0, false);
@@ -221,7 +201,6 @@ public final class Pruebas {
         comprobar(pl.cajas[0].rect.x > 310f, "la caja ligera se mueve con un personaje");
     }
 
-    /** Recorre los mecanismos reales de los ocho niveles y completa cada uno. */
     private static void probarMecanismosIntegrados() {
         seccion("Mecanismos de los niveles");
         Partida.Entrada quieto = new Partida.Entrada();
@@ -318,10 +297,6 @@ public final class Pruebas {
         return total;
     }
 
-    // =========================================================
-    //                  PUNTUACION Y PROGRESO
-    // =========================================================
-
     private static void probarPuntuacionYProgreso() {
         seccion("Puntuacion y progreso");
         Puntuacion puntos = new Puntuacion(2);
@@ -362,10 +337,6 @@ public final class Pruebas {
         comprobar(progreso.estaCompletado(0), "el nivel queda completado");
         comprobar(progreso.siguienteNivel() == 1, "el siguiente nivel es el 2");
     }
-
-    // =========================================================
-    //                  MEDIDAS FIJAS DEL EDITOR
-    // =========================================================
 
     private static void probarMedidasFijasDelEditor() {
         seccion("Medidas fijas del editor");
@@ -436,10 +407,6 @@ public final class Pruebas {
     private static boolean misma(float a, float b) {
         return Math.abs(a - b) < 0.01f;
     }
-
-    // =========================================================
-    //                       PERSISTENCIA
-    // =========================================================
 
     private static void probarPersistenciaNiveles() {
         seccion("Persistencia de niveles");
@@ -549,10 +516,6 @@ public final class Pruebas {
         }
     }
 
-    // =========================================================
-    //                         RED
-    // =========================================================
-
     private static void probarRedLocalhost() {
         seccion("Red en localhost");
         GestorRed host = new GestorRed();
@@ -600,7 +563,6 @@ public final class Pruebas {
                 @Override public boolean seCumple() { return "reanudar".equals(cliente.consumirComando()); }
             }), "el invitado recibe comandos del anfitrion");
 
-            // Reconexion: se cierra el primer cliente y entra otro con la misma sala.
             cliente.cerrar();
             comprobar(esperar(4000, new Condicion() {
                 @Override public boolean seCumple() { return !host.conectado; }
@@ -626,10 +588,6 @@ public final class Pruebas {
             cliente.cerrar();
         }
     }
-
-    // =========================================================
-    //                       UTILIDADES
-    // =========================================================
 
     private static Nivel nivelDePrueba() {
         Nivel n = new Nivel();

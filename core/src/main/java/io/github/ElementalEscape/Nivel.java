@@ -3,15 +3,9 @@ package io.github.ElementalEscape;
 import com.badlogic.gdx.math.Rectangle;
 import java.util.Arrays;
 
-/**
- * Datos de un nivel. No guarda estado de la partida: eso lo hace Partida.
- * Asi el mismo nivel se puede jugar, editar, guardar en JSON y sincronizar por red
- * sin que queden "gemas tomadas" o "puertas abiertas" pegadas en los datos.
- */
 public class Nivel {
     public static final int FORMATO_ACTUAL = 1;
 
-    // ---------- Datos generales ----------
     public int formato = FORMATO_ACTUAL;
     public String nombre = "Nuevo nivel";
     public float ancho = Configuracion.ANCHO_MUNDO;
@@ -27,7 +21,6 @@ public class Nivel {
     public Rectangle salidaFuego = new Rectangle(820f, 30f, 60f, 80f);
     public Rectangle salidaAgua = new Rectangle(890f, 30f, 60f, 80f);
 
-    // ---------- Objetos ----------
     public Plataforma[] plataformas = new Plataforma[0];
     public Peligro[] peligros = new Peligro[0];
     public Gema[] gemas = new Gema[0];
@@ -39,15 +32,10 @@ public class Nivel {
 
     public Nivel() { }
 
-    // =========================================================
-    //                    CLASES DE OBJETOS
-    // =========================================================
-
-    /** Plataforma o pared solida. El estilo solo cambia el dibujo. */
     public static class Plataforma {
         public Rectangle rect = new Rectangle();
         public String estilo = "PIEDRA";
-        /** Los bordes automaticos del escenario conservan su tamano completo. */
+
         public boolean limite = false;
 
         public Plataforma() { }
@@ -58,7 +46,6 @@ public class Nivel {
         }
     }
 
-    /** Zona peligrosa. lava=true mata al agua; lava=false mata al fuego. */
     public static class Peligro {
         public Rectangle rect = new Rectangle();
         public boolean lava = true;
@@ -71,7 +58,6 @@ public class Nivel {
         }
     }
 
-    /** Coleccionable. Si es secreta vale un poco mas y brilla distinto. */
     public static class Gema {
         public Rectangle rect = new Rectangle();
         public boolean secreta = false;
@@ -83,10 +69,6 @@ public class Nivel {
         }
     }
 
-    /**
-     * Placa de presion: se mantiene activa mientras alguien (o una caja) la pisa.
-     * elemento: AMBOS, FUEGO o AGUA.
-     */
     public static class Boton {
         public Rectangle rect = new Rectangle(0f, 0f, 56f, 12f);
         public int id = 1;
@@ -101,10 +83,6 @@ public class Nivel {
         }
     }
 
-    /**
-     * Palanca de un solo uso. orden > 0 la vuelve parte de una secuencia:
-     * solo se puede activar cuando las anteriores del mismo grupo ya estan activas.
-     */
     public static class Palanca {
         public Rectangle rect = new Rectangle(0f, 0f, 28f, 44f);
         public int id = 1;
@@ -121,12 +99,6 @@ public class Nivel {
         }
     }
 
-    /**
-     * Puerta: bloquea el paso mientras esta cerrada.
-     * modo=TODAS exige que todos los controles de su id esten activos.
-     * duracion > 0 la mantiene abierta unos segundos al activarse.
-     * puente=true hace lo contrario: es solida cuando esta activa (puente de energia).
-     */
     public static class Puerta {
         public Rectangle rect = new Rectangle(0f, 0f, 18f, 250f);
         public int id = 1;
@@ -145,13 +117,12 @@ public class Nivel {
         }
     }
 
-    /** Plataforma que va y vuelve entre su posicion inicial y (finX, finY). */
     public static class PlataformaMovil {
         public Rectangle rect = new Rectangle(0f, 0f, 100f, 18f);
         public float finX = 300f;
         public float finY = 0f;
         public float velocidad = Configuracion.VELOCIDAD_PLATAFORMA_MOVIL;
-        public int id = 0; // 0 = siempre se mueve; >0 = necesita el control de ese id
+        public int id = 0;
 
         public PlataformaMovil() { }
 
@@ -165,7 +136,6 @@ public class Nivel {
         }
     }
 
-    /** Caja empujable. Las pesadas necesitan que los dos personajes empujen. */
     public static class Caja {
         public Rectangle rect = new Rectangle(0f, 0f, Configuracion.ANCHO_CAJA, Configuracion.ALTO_CAJA);
         public boolean pesada = false;
@@ -178,11 +148,6 @@ public class Nivel {
         }
     }
 
-    // =========================================================
-    //                    AYUDAS
-    // =========================================================
-
-    /** Corrige datos incompletos o invalidos despues de cargar un JSON. */
     public void normalizar() {
         if (nombre == null || nombre.trim().isEmpty()) nombre = "Nuevo nivel";
         if (tema == null || tema.trim().isEmpty()) tema = "TEMPLO";
@@ -208,11 +173,6 @@ public class Nivel {
         return Math.max(minimo, Math.min(maximo, valor));
     }
 
-    /**
-     * Normaliza un nivel para el editor: conserva tamaños personalizados de los
-     * objetos editables, asegura mínimos y los mantiene dentro del escenario.
-     * Los bordes automáticos del escenario son la excepción: conservan su tamaño.
-     */
     public void normalizarEditor() {
         normalizar();
 
@@ -301,10 +261,6 @@ public class Nivel {
         return suelo || izquierda || derecha || techo;
     }
 
-    /**
-     * Ajusta o crea los bordes del recinto (suelo, paredes, techo) para que
-     * coincidan con las dimensiones actuales del nivel. Conserva estilo si ya existen.
-     */
     public void ajustarBordes() {
         normalizar();
         Plataforma suelo = null, izq = null, der = null, techo = null;
@@ -345,8 +301,6 @@ public class Nivel {
         plataformas = nueva.toArray(new Plataforma[0]);
     }
 
-    /** Devuelve rectangulos de objetos que quedarían total o parcialmente fuera
-     *  si el escenario pasa a nuevoAncho x nuevoAlto (excluye bordes límite). */
     public java.util.List<String> objetosFuera(float nuevoAncho, float nuevoAlto) {
         java.util.List<String> fuera = new java.util.ArrayList<>();
         for (Plataforma p : plataformas) {

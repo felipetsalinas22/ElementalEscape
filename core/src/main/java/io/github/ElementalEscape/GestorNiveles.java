@@ -10,14 +10,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Guarda y carga los niveles personalizados en archivos JSON.
- *
- * En el juego se usa una carpeta del usuario para que los niveles no se pierdan:
- *   C:\Users\TU_USUARIO\.elemental-escape\niveles
- *
- * La clase tambien se puede crear con otra carpeta (lo usan las pruebas).
- */
 public class GestorNiveles {
     private final FileHandle carpeta;
     private final Json json;
@@ -43,7 +35,6 @@ public class GestorNiveles {
         if (!carpeta.exists()) carpeta.mkdirs();
     }
 
-    /** Entrada de la lista. Si un archivo esta roto, error explica el problema. */
     public static class Entrada {
         public String archivo;
         public Nivel nivel;
@@ -83,15 +74,8 @@ public class GestorNiveles {
         return leer(archivo);
     }
 
-    /**
-     * Carga un nivel con superposicion de usuario: busca primero en la carpeta
-     * de usuario (.elemental-escape/niveles). Si existe una version modificada,
-     * la devuelve. Si no, devuelve el nivel integrado de la historia.
-     * El parametro nombreIntegrado se usa para buscar el nivel de la historia
-     * por su nombre cuando no hay archivo de usuario.
-     */
     public Nivel cargarConSuperposicion(String nombreIntegrado) throws IOException {
-        // 1. Buscar en la carpeta de usuario por nombre
+
         for (Entrada e : listar()) {
             if (e.nivel != null && e.archivo != null && !e.archivo.startsWith("HISTORIA:")
                 && e.nivel.nombre != null
@@ -99,7 +83,7 @@ public class GestorNiveles {
                 return e.nivel;
             }
         }
-        // 2. Si no hay version de usuario, devolver el integrado de la historia
+
         for (Nivel h : NivelesIntegrados.todos()) {
             if (h.nombre != null && h.nombre.trim().equalsIgnoreCase(nombreIntegrado.trim())) {
                 Nivel copia = json.fromJson(Nivel.class, json.toJson(h));
@@ -126,15 +110,17 @@ public class GestorNiveles {
         }
     }
 
-    /**
-     * Guarda un nivel. Si ya existe otro con el mismo nombre solo sobrescribe
-     * cuando permitirSobrescribir es true.
-     */
     public String guardar(Nivel nivel, boolean permitirSobrescribir) throws IOException {
         if (nivel == null) throw new IOException("No hay nivel para guardar.");
         nivel.normalizarEditor();
         if (nivel.nombre == null || nivel.nombre.trim().isEmpty())
             throw new IOException("El nivel necesita un nombre.");
+        String nombreLimpio = nivel.nombre.trim();
+        if (nombreLimpio.contains("/") || nombreLimpio.contains("\\"))
+            throw new IOException("El nombre del nivel no puede contener / ni \\.");
+        if (nombreLimpio.length() > 80)
+            throw new IOException("El nombre del nivel es demasiado largo (maximo 80 caracteres).");
+        nivel.nombre = nombreLimpio;
         asegurarCarpeta();
 
         FileHandle destino = archivoPara(nivel.nombre);
@@ -148,9 +134,7 @@ public class GestorNiveles {
             if (!mismoArchivo && !permitirSobrescribir)
                 throw new IOException("Ya existe un archivo llamado \"" + destino.name() + "\".");
         }
-        // Guardar de nuevo el mismo nivel es una actualizacion normal: no hace
-        // falta pedir confirmacion. La confirmacion queda para colisiones reales
-        // con otro archivo o para la API que la solicite explicitamente.
+
         if (existeNombre(nivel.nombre) && !permitirSobrescribir && !mismoArchivo)
             throw new IOException("Ya existe un nivel llamado \"" + nivel.nombre + "\". Elige otro nombre o confirma sobrescribir.");
 
@@ -159,10 +143,6 @@ public class GestorNiveles {
         return destino.name();
     }
 
-    /**
-     * Actualiza un archivo ya cargado sin crear copias.
-     * El nombre interno puede cambiar, pero el archivo conserva su identidad.
-     */
     public String guardarEn(Nivel nivel, String nombreArchivo) throws IOException {
         if (nivel == null) throw new IOException("No hay nivel para guardar.");
         if (nombreArchivo == null || nombreArchivo.trim().isEmpty())
@@ -190,7 +170,6 @@ public class GestorNiveles {
         return duplicarNivel(cargar(nombreArchivo), nuevoNombre);
     }
 
-    /** Duplica el nivel que esta en memoria, aunque tenga cambios sin guardar. */
     public Nivel duplicarNivel(Nivel original, String nuevoNombre) throws IOException {
         if (original == null) throw new IOException("No hay nivel para duplicar.");
         if (nuevoNombre == null || nuevoNombre.trim().isEmpty())
@@ -205,7 +184,6 @@ public class GestorNiveles {
         return copia;
     }
 
-    /** Devuelve el archivo real que contiene ese nombre, o "" si no existe. */
     public String archivoConNombre(String nombre) {
         if (nombre == null) return "";
         for (Entrada e : listar()) {
@@ -226,7 +204,6 @@ public class GestorNiveles {
         return a != null && b != null && a.trim().equalsIgnoreCase(b.trim());
     }
 
-    /** Convierte el nombre en un archivo seguro para Windows/Linux. */
     public FileHandle archivoPara(String nombre) {
         String base = nombre == null ? "nivel" : nombre.trim();
         base = base.replaceAll("[\\\\/:*?\"<>|]", "_");
@@ -237,7 +214,7 @@ public class GestorNiveles {
 
         int numero = 2;
         while (archivo.exists()) {
-            // Si el archivo ya contiene este mismo nivel, es el destino correcto.
+
             try {
                 Nivel existente = leer(archivo);
                 if (nombresIguales(existente.nombre, nombre)) return archivo;
@@ -248,7 +225,6 @@ public class GestorNiveles {
         return archivo;
     }
 
-    /** Devuelve el nombre de archivo que corresponde a un nivel ya guardado. */
     public String archivoDeNivel(Nivel nivel) {
         if (nivel == null) return "";
         for (Entrada e : listar()) {

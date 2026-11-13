@@ -5,11 +5,6 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonWriter;
 
-/**
- * Guarda progreso y ajustes en la carpeta del usuario.
- * Si un archivo no existe o esta roto, el juego empieza con datos nuevos
- * en lugar de cerrarse con un error.
- */
 public class GestorProgreso {
     private final FileHandle carpeta;
     private final Json json;

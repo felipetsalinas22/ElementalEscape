@@ -6,10 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Revisa que un nivel tenga lo minimo necesario para poder jugarse.
- * La usa el editor antes de probar/guardar y tambien las pruebas automaticas.
- */
 public final class ValidadorNivel {
     private ValidadorNivel() { }
 
@@ -58,7 +54,6 @@ public final class ValidadorNivel {
             if (!elementoValido(p.elemento)) errores.add("Una palanca tiene un elemento invalido: " + p.elemento);
         }
 
-        // Las secuencias deben tener ordenes 1, 2, 3... sin repetir dentro del grupo.
         List<Integer> grupos = new ArrayList<>();
         for (Nivel.Palanca p : n.palancas) {
             if (p.orden > 0 && !grupos.contains(p.grupo)) grupos.add(p.grupo);
@@ -94,7 +89,6 @@ public final class ValidadorNivel {
             if (!zona.contains(p.rect)) errores.add("Hay un peligro fuera del escenario.");
         }
 
-        // Las salidas deben ser alcanzables "a simple vista": no estan dentro de un muro.
         if (tocaSolido(n, n.salidaFuego)) errores.add("La salida de Fuego esta dentro de una plataforma.");
         if (tocaSolido(n, n.salidaAgua)) errores.add("La salida de Agua esta dentro de una plataforma.");
 
@@ -105,13 +99,6 @@ public final class ValidadorNivel {
         return validar(n).isEmpty();
     }
 
-    /**
-     * Comprobacion conservadora de recorrido: construye las superficies
-     * pisables (piso, plataformas, extremos de plataformas moviles y puentes)
-     * y verifica que las salidas y los mecanismos sean alcanzables con saltos
-     * posibles. Ignora puertas cerradas y peligros: valida la geometria, no la
-     * solucion exacta de cada puzzle.
-     */
     public static List<String> validarConectividad(Nivel n) {
         List<String> problemas = new ArrayList<>();
         if (n == null) {
@@ -134,8 +121,6 @@ public final class ValidadorNivel {
         boolean[] desdeFuego = recorrer(superficies, fuego);
         boolean[] desdeAgua = recorrer(superficies, agua);
 
-        // Cada personaje debe poder llegar a SU salida. No basta con que una
-        // de las dos salidas sea alcanzable por cualquiera de los dos.
         comprobarDestino(problemas, superficies, desdeFuego,
             n.salidaFuego, "La salida de Fuego no es alcanzable desde su origen.");
         comprobarDestino(problemas, superficies, desdeAgua,
@@ -207,11 +192,6 @@ public final class ValidadorNivel {
         return lista;
     }
 
-    /**
-     * Solo agrega una superficie si el personaje cabe de pie sobre al menos una
-     * parte de ella. Sin esto, el techo y la cara superior de los muros del
-     * recinto se tomaban como plataformas y conectaban zonas inaccesibles.
-     */
     private static void agregarSuperficie(Nivel n, List<Superficie> lista,
                                           float x1, float x2, float y) {
         if (!tieneEspacioParaPararse(n, x1, x2, y)) return;
@@ -267,11 +247,11 @@ public final class ValidadorNivel {
         float subida = b.y - a.y;
         if (subida > 152f) return false;
         if (subida >= -1f) {
-            // Salto: cuanto mas alto el destino, menos distancia horizontal queda.
+
             float maximo = 224f - Math.max(0f, subida) * 0.46f;
             return hueco <= Math.max(24f, maximo);
         }
-        // Caida: la gravedad permite cubrir algo mas de distancia horizontal.
+
         return hueco <= 300f;
     }
 

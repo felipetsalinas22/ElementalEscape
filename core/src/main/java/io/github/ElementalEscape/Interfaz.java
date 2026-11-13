@@ -8,10 +8,6 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-/**
- * Interfaz inmediata: cada pantalla dibuja sus botones y recibe true/false.
- * No usa scene2d, asi que no hay skins ni archivos externos.
- */
 public class Interfaz {
     private final SpriteBatch lote;
     private final BitmapFont fuente;
@@ -88,7 +84,7 @@ public class Interfaz {
             new Color(0.55f, 0.78f, 1f, 0.11f));
         Dibujo.rectangulo(lote, x + 2f, y - 3f, ancho, alto, new Color(0f, 0f, 0f, 0.35f));
         Dibujo.panel(lote, x, y, ancho, alto, relleno, borde);
-        // Acento vertical: refuerza la jerarquia y hace visible el area del boton.
+
         Dibujo.rectangulo(lote, x, y, Math.min(4f, ancho * 0.08f), alto,
             hover ? new Color(0.72f, 0.92f, 1f, 0.92f) : new Color(0.42f, 0.58f, 0.82f, 0.55f));
         Dibujo.rectangulo(lote, x + 5f, y + alto - 1f, Math.max(0f, ancho - 7f), 1f,
@@ -97,7 +93,6 @@ public class Interfaz {
             Configuracion.TEXTO, escalaTextoQueCabe(texto, ancho, 0.92f, 0.58f));
     }
 
-    /** Reduce la escala solo cuando el texto no cabe: evita letras cortadas. */
     private float escalaTextoQueCabe(String texto, float anchoBoton, float escalaDeseada, float minimo) {
         if (texto == null || texto.isEmpty()) return escalaDeseada;
         float disponible = Math.max(12f, anchoBoton - 26f);
@@ -106,7 +101,6 @@ public class Interfaz {
         return Math.max(minimo, escalaDeseada * disponible / anchoTexto);
     }
 
-    /** Interruptor on/off con etiqueta. Devuelve el nuevo valor. */
     public boolean interruptor(String etiqueta, boolean valor, float x, float y, float ancho, float alto) {
         boolean hover = dentro(x, y, ancho, alto);
         boolean pulsado = hover && clic;

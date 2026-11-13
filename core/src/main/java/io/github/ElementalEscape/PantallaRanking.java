@@ -6,7 +6,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.ScreenUtils;
 import java.util.List;
 
-/** Ranking competitivo: totales, ganador por nivel y logros. */
 public class PantallaRanking extends PantallaBase {
     private float tiempo = 0f;
 
@@ -60,7 +59,6 @@ public class PantallaRanking extends PantallaBase {
             + Configuracion.TOTAL_NIVELES + " niveles completados", 480f, 402f,
             Configuracion.TEXTO_SUAVE, 0.62f);
 
-        // Tabla por nivel.
         Dibujo.panel(lote, 30f, 84f, 560f, 288f, new Color(0.05f, 0.07f, 0.12f, 0.96f),
             new Color(0.30f, 0.40f, 0.58f, 1f));
         Dibujo.texto(lote, fuente, "NIVEL", 48f, 350f, Configuracion.TEXTO_SUAVE, 0.60f);
@@ -89,7 +87,6 @@ public class PantallaRanking extends PantallaBase {
                     : (r.ganador == 1 ? Configuracion.FUEGO_CLARO : Configuracion.AGUA_CLARA)), 0.58f);
         }
 
-        // Logros y records.
         Dibujo.panel(lote, 610f, 84f, 320f, 288f, new Color(0.05f, 0.07f, 0.12f, 0.96f),
             new Color(0.30f, 0.40f, 0.58f, 1f));
         Dibujo.texto(lote, fuente, "LOGROS", 628f, 350f, Configuracion.DORADO, 0.78f);
@@ -98,7 +95,7 @@ public class PantallaRanking extends PantallaBase {
             Dibujo.texto(lote, fuente, "Todavia no hay logros.", 628f, 324f,
                 Configuracion.TEXTO_SUAVE, 0.62f);
         } else {
-            // Cinco logros caben sin invadir la zona de records.
+
             for (int i = 0; i < logros.size() && i < 5; i++) {
                 Dibujo.rectanguloRotado(lote, 630f, 316f - i * 24f, 9f, 9f, 4.5f, 4.5f, 45f,
                     Configuracion.DORADO);

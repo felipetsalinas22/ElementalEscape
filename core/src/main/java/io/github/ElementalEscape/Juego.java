@@ -3,10 +3,6 @@ package io.github.ElementalEscape;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 
-/**
- * Punto de entrada LibGDX y estado compartido entre pantallas:
- * progreso, ajustes, niveles personalizados y sonido generado.
- */
 public class Juego extends Game {
     private Progreso progreso;
     private Ajustes ajustes;

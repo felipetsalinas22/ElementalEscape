@@ -4,13 +4,6 @@ import com.badlogic.gdx.math.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Toda la logica de una partida: fisica, mecanismos, puntaje y final del nivel.
- * No depende de la pantalla ni de la red, asi que se puede probar sin abrir una ventana.
- *
- * El anfitrion del modo online simula esta clase y envia Instantaneas.
- * El invitado solo predice su propio movimiento y recibe el resto del anfitrion.
- */
 public class Partida {
     public final Nivel nivel;
     public final int indiceNivel;
@@ -55,7 +48,6 @@ public class Partida {
     private boolean saltoFuegoPendiente = false;
     private boolean saltoAguaPendiente = false;
 
-    /** Entrada de un jugador. Las pantallas la llenan desde el teclado o la red. */
     public static class Entrada {
         public boolean izquierda;
         public boolean derecha;
@@ -140,7 +132,6 @@ public class Partida {
         reiniciar();
     }
 
-    /** Vuelve todo al estado inicial del nivel (sin tocar el progreso guardado). */
     public void reiniciar() {
         fuego.reaparecer();
         agua.reaparecer();
@@ -193,10 +184,6 @@ public class Partida {
     private void reiniciarPuntuacion() {
         puntuacion.reiniciar(nivel.gemas.length);
     }
-
-    // =========================================================
-    //                       ACTUALIZACION
-    // =========================================================
 
     public void actualizar(float dt, Entrada entradaFuego, Entrada entradaAgua) {
         eventos.clear();
@@ -262,20 +249,16 @@ public class Partida {
             particulas.polvo(p.x + p.ancho / 2f, p.y, 6);
         }
         if (vivoAntes && !p.vivo && !p.tiempoReaparicionYaContado()) {
-            // El jugador murio por caer fuera del mapa.
+
             contarMuerte(p, "cayo al vacio");
         }
     }
-
-    // =========================================================
-    //                  PLATAFORMAS Y CAJAS
-    // =========================================================
 
     private void actualizarMoviles(float dt) {
         for (MovilEstado m : moviles) {
             if (m.longitud <= 0.01f) continue;
             if (m.datos.id > 0 && !controlActivo(m.datos.id)) {
-                continue; // pausada hasta que se active su mecanismo
+                continue;
             }
             float viejoX = m.rect.x;
             float viejoY = m.rect.y;
@@ -298,15 +281,212 @@ public class Partida {
             float dy = m.rect.y - viejoY;
             if (dx == 0f && dy == 0f) continue;
 
-            // Arrastrar a quien este parado sobre la plataforma.
+            Rectangle viejoRect = new Rectangle(viejoX, viejoY, m.rect.width, m.rect.height);
+
             for (Jugador p : new Jugador[]{fuego, agua}) {
-                if (!p.vivo || !p.enSuelo) continue;
-                if (Math.abs(p.y - (viejoY + m.rect.height)) > 7f) continue;
-                if (p.x + p.ancho < viejoX || p.x > viejoX + m.rect.width) continue;
+                if (!p.vivo) continue;
+                boolean montado = p.enSuelo
+                    && p.y >= viejoY + m.rect.height - 4f
+                    && p.y <= viejoY + m.rect.height + 8f
+                    && p.x + p.ancho > viejoX + 0.5f
+                    && p.x < viejoX + m.rect.width - 0.5f;
+                if (!montado) continue;
+
                 p.x += dx;
                 p.y += dy;
+                if (p.velY < 0f) p.velY = 0f;
+                p.enSuelo = true;
+
+                if (p.x + p.ancho <= m.rect.x + 1f || p.x >= m.rect.x + m.rect.width - 1f) {
+                    p.enSuelo = false;
+                } else {
+                    p.y = m.rect.y + m.rect.height;
+                }
+
+                resolverJugadorContraEntorno(p, m, true, dx);
+            }
+
+            for (Jugador p : new Jugador[]{fuego, agua}) {
+                if (!p.vivo) continue;
+                if (!p.cuerpo().overlaps(m.rect)) continue;
+                boolean sobre = p.y >= m.rect.y + m.rect.height - 3f
+                    && p.x + p.ancho > m.rect.x + 0.5f && p.x < m.rect.x + m.rect.width - 0.5f;
+                if (sobre) continue;
+
+                separarPorMovimientoPlataforma(p, m.rect, viejoRect, dx, dy);
+                resolverJugadorContraEntorno(p, m, false, dx);
             }
         }
+    }
+
+    private void resolverJugadorContraEntorno(Jugador p, MovilEstado movilActual, boolean montado, float dxPlataforma) {
+        List<Rectangle> entorno = entornoSolidoParaJugador(movilActual);
+        Rectangle plat = movilActual.rect;
+
+        for (int iter = 0; iter < 5; iter++) {
+            boolean ajustado = false;
+            for (Rectangle s : entorno) {
+                if (!p.cuerpo().overlaps(s)) continue;
+                ajustado = true;
+                float solapeIzq = (p.x + p.ancho) - s.x;
+                float solapeDer = (s.x + s.width) - p.x;
+                float solapeAbajo = (p.y + p.alto) - s.y;
+                float solapeArriba = (s.y + s.height) - p.y;
+                if (solapeIzq <= 0f || solapeDer <= 0f || solapeAbajo <= 0f || solapeArriba <= 0f) continue;
+
+                if (montado) {
+
+                    if (solapeAbajo < solapeArriba && solapeAbajo < Math.min(solapeIzq, solapeDer)) {
+                        p.y = s.y - p.alto;
+                        if (p.velY > 0f) p.velY = 0f;
+                    } else {
+                        if (solapeIzq <= solapeDer) p.x = s.x - p.ancho;
+                        else p.x = s.x + s.width;
+                        p.velX = 0f;
+
+                        if (p.x + p.ancho > plat.x + 1f && p.x < plat.x + plat.width - 1f) {
+                            p.y = plat.y + plat.height;
+                        }
+                    }
+                } else {
+                    float minX = Math.min(solapeIzq, solapeDer);
+                    float minY = Math.min(solapeAbajo, solapeArriba);
+                    if (minY < minX) {
+                        if (solapeArriba <= solapeAbajo) {
+                            p.y = s.y + s.height;
+                            p.enSuelo = true;
+                            if (p.velY < 0f) p.velY = 0f;
+                        } else {
+                            p.y = s.y - p.alto;
+                            if (p.velY > 0f) p.velY = 0f;
+                        }
+                    } else {
+                        if (solapeIzq <= solapeDer) p.x = s.x - p.ancho;
+                        else p.x = s.x + s.width;
+                        p.velX = 0f;
+                    }
+                }
+            }
+            if (!ajustado) break;
+        }
+
+        if (montado) {
+            boolean apoyado = p.x + p.ancho > plat.x + 1f && p.x < plat.x + plat.width - 1f;
+            boolean libreArriba = !solapaAlguno(p, entorno);
+            if (apoyado && libreArriba) {
+                p.y = plat.y + plat.height;
+                p.enSuelo = true;
+            } else if (!apoyado) {
+                p.enSuelo = false;
+            } else {
+
+                p.enSuelo = false;
+                float empuje = Math.abs(dxPlataforma) + 2f;
+                if (dxPlataforma >= 0f) p.x += empuje; else p.x -= empuje;
+                if (p.cuerpo().overlaps(plat)) {
+
+                    p.y = plat.y - p.alto - 0.5f;
+                }
+
+                for (int i = 0; i < 2; i++) {
+                    for (Rectangle s : entorno) {
+                        if (!p.cuerpo().overlaps(s)) continue;
+                        float solapeIzq = (p.x + p.ancho) - s.x;
+                        float solapeDer = (s.x + s.width) - p.x;
+                        if (solapeIzq <= solapeDer) p.x = s.x - p.ancho - 0.1f;
+                        else p.x = s.x + s.width + 0.1f;
+                    }
+                }
+            }
+        }
+
+        limitarJugadorAlMundo(p);
+        if (p.y < -90f) matar(p, "cayo al vacio");
+    }
+
+    private void separarPorMovimientoPlataforma(Jugador p, Rectangle plat, Rectangle viejo, float dx, float dy) {
+        if (!p.cuerpo().overlaps(plat)) return;
+        float solapeIzq = (p.x + p.ancho) - plat.x;
+        float solapeDer = (plat.x + plat.width) - p.x;
+        float solapeAbajo = (p.y + p.alto) - plat.y;
+        float solapeArriba = (plat.y + plat.height) - p.y;
+        if (solapeIzq <= 0f || solapeDer <= 0f || solapeAbajo <= 0f || solapeArriba <= 0f) return;
+
+        boolean veniaArriba = p.y >= viejo.y + viejo.height - 2f;
+        boolean veniaAbajo = p.y + p.alto <= viejo.y + 2f;
+        boolean veniaIzq = p.x + p.ancho <= viejo.x + 2f;
+        boolean veniaDer = p.x >= viejo.x + viejo.width - 2f;
+
+        if (veniaArriba) {
+            p.y = plat.y + plat.height;
+            p.enSuelo = true;
+            if (p.velY < 0f) p.velY = 0f;
+        } else if (veniaAbajo) {
+            p.y = plat.y - p.alto;
+            if (p.velY > 0f) p.velY = 0f;
+        } else if (veniaIzq) {
+            p.x = plat.x - p.ancho;
+            p.velX = 0f;
+        } else if (veniaDer) {
+            p.x = plat.x + plat.width;
+            p.velX = 0f;
+        } else {
+            float minX = Math.min(solapeIzq, solapeDer);
+            float minY = Math.min(solapeAbajo, solapeArriba);
+            if (minY < minX) {
+                if (solapeArriba < solapeAbajo) {
+                    p.y = plat.y + plat.height;
+                    p.enSuelo = true;
+                    if (p.velY < 0f) p.velY = 0f;
+                } else {
+                    p.y = plat.y - p.alto;
+                    if (p.velY > 0f) p.velY = 0f;
+                }
+            } else {
+                if (solapeIzq < solapeDer) p.x = plat.x - p.ancho;
+                else p.x = plat.x + plat.width;
+                p.velX = 0f;
+            }
+        }
+    }
+
+    private boolean solapaAlguno(Jugador p, List<Rectangle> entorno) {
+        Rectangle c = p.cuerpo();
+        for (Rectangle s : entorno) if (c.overlaps(s)) return true;
+        return false;
+    }
+
+    private List<Rectangle> entornoSolidoParaJugador(MovilEstado movilActual) {
+        List<Rectangle> entorno = new ArrayList<>();
+        for (Nivel.Plataforma pl : nivel.plataformas) entorno.add(pl.rect);
+        for (int i = 0; i < nivel.puertas.length; i++) {
+            Nivel.Puerta puerta = nivel.puertas[i];
+            boolean activa = puertasAbiertas[i];
+            if (puerta.puente) {
+                if (activa) entorno.add(puerta.rect);
+            } else if (!activa) {
+                entorno.add(puerta.rect);
+            }
+        }
+        for (MovilEstado otro : moviles) {
+            if (otro == movilActual) continue;
+            entorno.add(otro.rect);
+        }
+        for (CajaEstado c : cajas) entorno.add(c.rect);
+        return entorno;
+    }
+
+    private void limitarJugadorAlMundo(Jugador p) {
+        if (p.x < 0f) p.x = 0f;
+        if (p.x > nivel.ancho - p.ancho) p.x = Math.max(0f, nivel.ancho - p.ancho);
+        if (p.y + p.alto > nivel.alto) {
+            p.y = Math.max(0f, nivel.alto - p.alto);
+            if (p.velY > 0f) p.velY = 0f;
+        }
+    }
+
+    private void resolverChoqueJugadorConEntorno(Jugador p, MovilEstado movilActual) {
+        resolverJugadorContraEntorno(p, movilActual, false, 0f);
     }
 
     private void actualizarCajas(float dt) {
@@ -346,7 +526,6 @@ public class Partida {
         }
     }
 
-    /** Mueve una caja cuando uno o los dos jugadores empujan en la misma direccion. */
     private void empujarCajas(float dt, Entrada entradaFuego, Entrada entradaAgua) {
         for (CajaEstado c : cajas) {
             int derecha = 0;
@@ -381,17 +560,13 @@ public class Partida {
         if (p == null || e == null || !p.vivo) return false;
         if (!e.izquierda && !e.derecha) return false;
         if (e.izquierda && e.derecha) return false;
-        if (p.y >= caja.y + caja.height - 3f) return false; // esta encima, no al lado
+        if (p.y >= caja.y + caja.height - 3f) return false;
         Rectangle cuerpo = p.cuerpo();
         return cuerpo.x + cuerpo.width >= caja.x - 5f
             && cuerpo.x <= caja.x + caja.width + 5f
             && cuerpo.y < caja.y + caja.height - 3f
             && cuerpo.y + cuerpo.height > caja.y + 3f;
     }
-
-    // =========================================================
-    //                      COLISIONES
-    // =========================================================
 
     private void construirSolidos() {
         solidosJugador.clear();
@@ -424,12 +599,8 @@ public class Partida {
         for (MovilEstado m : moviles) solidosCaja.add(m.rect);
     }
 
-    // =========================================================
-    //                     MECANISMOS
-    // =========================================================
-
     private void actualizarMecanismos(float dt, boolean puntuar) {
-        // 1. Placas de presion.
+
         for (int i = 0; i < nivel.botones.length; i++) {
             Nivel.Boton b = nivel.botones[i];
             boolean activo = false;
@@ -444,7 +615,7 @@ public class Partida {
                 }
             }
             if (!activo && esDeAmbos(b.elemento)) {
-                // Las cajas solo pueden mantener placas neutrales.
+
                 for (CajaEstado c : cajas) {
                     if (c.rect.overlaps(b.rect)) { activo = true; break; }
                 }
@@ -458,7 +629,6 @@ public class Partida {
             botonesActivos[i] = activo;
         }
 
-        // 2. Palancas de un solo uso y secuencias.
         for (int i = 0; i < nivel.palancas.length; i++) {
             Nivel.Palanca palanca = nivel.palancas[i];
             boolean ocupadaAhora = false;
@@ -499,7 +669,6 @@ public class Partida {
             palancaOcupada[i] = ocupadaAhora;
         }
 
-        // 3. Puertas y puentes.
         for (int i = 0; i < nivel.puertas.length; i++) {
             Nivel.Puerta puerta = nivel.puertas[i];
             boolean cumple = cumpleCondicion(puerta);
@@ -521,8 +690,7 @@ public class Partida {
         for (int i = 0; i < nivel.palancas.length; i++) {
             if (nivel.palancas[i].grupo == grupo) {
                 palancasActivas[i] = false;
-                // No se devuelve la puntuacion: reintentar la secuencia no debe
-                // permitir sumar el mismo mecanismo varias veces.
+
             }
         }
     }
@@ -565,10 +733,6 @@ public class Partida {
     private static boolean esDeAmbos(String elemento) {
         return elemento == null || elemento.trim().isEmpty() || "AMBOS".equalsIgnoreCase(elemento);
     }
-
-    // =========================================================
-    //                GEMAS, PELIGROS Y SALIDAS
-    // =========================================================
 
     private void recogerGemas() {
         for (int i = 0; i < nivel.gemas.length; i++) {
@@ -633,17 +797,12 @@ public class Partida {
         }
     }
 
-    // =========================================================
-    //                    MUERTE Y REINICIO
-    // =========================================================
-
     private void matar(Jugador p, String motivo) {
         if (!p.vivo) return;
         p.morir();
         contarMuerte(p, motivo);
     }
 
-    /** Cuenta una muerte que ya ocurrio (por ejemplo, al caer al vacio). */
     private void contarMuerte(Jugador p, String motivo) {
         p.marcarMuerteContada();
         puntuacion.sumarMuerte(p.tipo);
@@ -677,10 +836,6 @@ public class Partida {
         }
     }
 
-    // =========================================================
-    //                     AYUDAS PUBLICAS
-    // =========================================================
-
     public void mostrarMensaje(String texto) {
         mensaje = texto == null ? "" : texto;
         mensajeTiempo = 2.8f;
@@ -697,7 +852,6 @@ public class Partida {
         return copia;
     }
 
-    /** Copia sin borrar: la usa la red para no perder los sonidos del anfitrion. */
     public String[] eventosActuales() {
         return eventos.toArray(new String[0]);
     }
@@ -724,10 +878,6 @@ public class Partida {
         int segundos = (int) (tiempo % 60f);
         return (minutos < 10 ? "0" : "") + minutos + ":" + (segundos < 10 ? "0" : "") + segundos;
     }
-
-    // =========================================================
-    //                 SINCronIZACION ONLINE
-    // =========================================================
 
     public void llenarInstantanea(Instantanea s, Progreso progreso) {
         s.version = Configuracion.VERSION_PROTOCOLO;
@@ -865,7 +1015,6 @@ public class Partida {
         if (p.vivo) p.tiempoReaparicion = 0f;
     }
 
-    /** Prediccion local del invitado: solo mueve su personaje, sin tocar puntos ni mecanismos. */
     public void predecirJugador(Jugador.Tipo tipo, float dt, Entrada entrada) {
         if (completado || derrota || pausado) return;
         construirSolidos();
@@ -901,7 +1050,6 @@ public class Partida {
         System.arraycopy(origen, 0, destino, 0, total);
     }
 
-    // Metodos de ayuda para las pruebas y para el editor.
     public void colocarJugador(Jugador.Tipo tipo, float x, float y) {
         Jugador p = tipo == Jugador.Tipo.FUEGO ? fuego : agua;
         p.x = x; p.y = y; p.velX = 0f; p.velY = 0f; p.vivo = true;

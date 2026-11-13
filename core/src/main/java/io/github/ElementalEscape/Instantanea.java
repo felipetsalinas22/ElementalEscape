@@ -1,10 +1,5 @@
 package io.github.ElementalEscape;
 
-/**
- * "Foto" del estado de una partida que el anfitrion envia al invitado.
- * Incluye a los dos jugadores, mecanismos, cajas, plataformas moviles,
- * puntajes y resultado. Asi las dos computadoras ven exactamente lo mismo.
- */
 public class Instantanea {
     public int version = Configuracion.VERSION_PROTOCOLO;
     public int nivel;
@@ -49,7 +44,6 @@ public class Instantanea {
     public float tiempoPuntuacion;
     public Puntuacion.ResultadoNivel resultado = new Puntuacion.ResultadoNivel();
 
-    // Progreso acumulado del anfitrion, para que el ranking sea igual en las dos PCs.
     public int totalesFuego;
     public int totalesAgua;
     public int nivelesCompletados;
@@ -57,6 +51,6 @@ public class Instantanea {
     public int nivelesGanadosAgua;
 
     public String mensaje = "";
-    /** Eventos de sonido/particulas ocurridos desde la foto anterior. */
+
     public String[] eventos = new String[0];
 }

@@ -1,6 +1,5 @@
 package io.github.ElementalEscape;
 
-/** Opciones del jugador. Se guardan en ajustes.json. */
 public class Ajustes {
     public boolean sonido = true;
     public boolean musica = true;

@@ -3,7 +3,6 @@ package io.github.ElementalEscape;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Progreso de la campana: resultados por nivel, puntos y logros. */
 public class Progreso {
     public int version = 1;
     public Puntuacion.ResultadoNivel[] niveles = new Puntuacion.ResultadoNivel[Configuracion.TOTAL_NIVELES];
@@ -26,11 +25,6 @@ public class Progreso {
         if (logros == null) logros = new String[0];
     }
 
-    /**
-     * Guarda el resultado de un nivel.
-     * Se queda el mejor intento (suma de ambos personajes) para que reiniciar
-     * un nivel no permita sumar puntos infinitos.
-     */
     public void registrar(int indiceNivel, Puntuacion.ResultadoNivel resultado) {
         normalizar();
         if (indiceNivel < 0 || indiceNivel >= niveles.length || resultado == null) return;
@@ -74,7 +68,6 @@ public class Progreso {
         return total;
     }
 
-    /** 0 = empate, 1 = gana fuego, 2 = gana agua. */
     public int ganadorFinal() {
         int fuego = puntosTotales(Jugador.Tipo.FUEGO);
         int agua = puntosTotales(Jugador.Tipo.AGUA);

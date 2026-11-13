@@ -1,15 +1,5 @@
 package io.github.ElementalEscape;
 
-/**
- * Puntuacion de UNA partida de nivel.
- * Reglas (todas en Configuracion):
- *   +100 por gema recogida (para quien la recoge)
- *   +25 por activar una placa/palanca por primera vez
- *   +300 por terminar el nivel (los dos)
- *   +bonus de tiempo (hasta 300 para cada uno)
- *   +100 a cada uno si se recogen todas las gemas
- *   -50 por muerte (nunca deja el puntaje del nivel por debajo de 0)
- */
 public class Puntuacion {
     public int puntosFuego;
     public int puntosAgua;
@@ -32,7 +22,6 @@ public class Puntuacion {
         this.totalGemas = totalGemas;
     }
 
-    /** Deja la puntuacion lista para una nueva partida del mismo nivel. */
     public void reiniciar(int totalGemas) {
         puntosFuego = 0;
         puntosAgua = 0;
@@ -80,7 +69,6 @@ public class Puntuacion {
         }
     }
 
-    /** Se llama una sola vez, al terminar el nivel. */
     public ResultadoNivel terminar(float tiempoNivel) {
         this.tiempo = tiempoNivel;
         if (finalizada) return crearResultado();
@@ -119,7 +107,6 @@ public class Puntuacion {
         return r;
     }
 
-    /** Datos que se guardan en el progreso y se muestran en la pantalla de resultados. */
     public static class ResultadoNivel {
         public boolean completado;
         public int puntosFuego;
@@ -134,7 +121,7 @@ public class Puntuacion {
         public int bonusAgua;
         public float tiempo;
         public boolean todasGemas;
-        public int ganador; // 0 empate, 1 fuego, 2 agua
+        public int ganador;
 
         public ResultadoNivel() { }
 
